@@ -1493,611 +1493,611 @@ extern const char __pv_ctab[];
  */
 extern int32 __dig_main(int32 argc, char **argv)
 {
- int32 rv; 
- long t1;
- double timd1;
- char s1[RECLEN];
+    int32 rv; 
+    long t1;
+    double timd1;
+    char s1[RECLEN];
 #ifndef __CVC_RT__
- int32 save_quiet;
- struct stat st;
+    int32 save_quiet;
+    struct stat st;
 #endif
 
- /* only does something if db malloc define set */ 
- __setup_dbmalloc();
+    /* only does something if db malloc define set */ 
+    __setup_dbmalloc();
 
- __start_sp = __end_sp = NULL;
- __log_s = NULL;
- /* set compilation int32 signal and save entry signal so can restore */
+    __start_sp = __end_sp = NULL;
+    __log_s = NULL;
+    /* set compilation int32 signal and save entry signal so can restore */
 #ifndef __NOSIGS__
 #if defined(INTSIGS)
- __old_int_sig = (sighandler *) signal(SIGINT, __comp_sigint_handler);
+    __old_int_sig = (sighandler *) signal(SIGINT, __comp_sigint_handler);
 #else
- __old_int_sig = (sighandler *) signal(SIGINT,
-   (void (*)()) __comp_sigint_handler);
+    __old_int_sig = (sighandler *) signal(SIGINT,
+                                          (void (*)()) __comp_sigint_handler);
 #endif
 #endif
 
- init_glbs();
+    init_glbs();
 
 
- /* vpi argument special format argv only set if needed */
- __vpi_argc = 0;
- __vpi_argv = NULL;
- /* no by convention argv 0 always has program name */
- __vpi_argv0 = __pv_stralloc(argv[0]);
+    /* vpi argument special format argv only set if needed */
+    __vpi_argc = 0;
+    __vpi_argv = NULL;
+    /* no by convention argv 0 always has program name */
+    __vpi_argv0 = __pv_stralloc(argv[0]);
 
- /* expand options so have list that looks as if all on command line */
- xpnd_args(argc, argv);
+    /* expand options so have list that looks as if all on command line */
+    xpnd_args(argc, argv);
 
- /* process special early options - any errors here only to std out */
- /* notice no verbose message for quiet */
- if (__quiet_olp != NULL)
-  {
-   __quiet_msgs = TRUE;
-   /* vendor1 runs with -q need to allow verbose switches to be turned on */ 
-   __verbose = FALSE;
-  }
- open_logfile();
+    /* process special early options - any errors here only to std out */
+    /* notice no verbose message for quiet */
+    if (__quiet_olp != NULL)
+    {
+        __quiet_msgs = TRUE;
+        /* vendor1 runs with -q need to allow verbose switches to be turned on */ 
+        __verbose = FALSE;
+    }
+    open_logfile();
 
 #ifdef __linux__
 #ifdef __ELF__
- __platform = __pv_stralloc("Linux-elf");
+    __platform = __pv_stralloc("Linux-elf");
 #else
- __platform = __pv_stralloc("Linux-aout");
+    __platform = __pv_stralloc("Linux-aout");
 #endif
 #endif
 
- /* SJM 12-28-12 - this is the major version used by RLM license manager */
- __vers = __pv_stralloc(VERS);
- __vers2 = __pv_stralloc(VERS2);
- __ofdt = __pv_stralloc(OFDT);
- __ip2_msg("%s%s of %s (%s).\n", __vers, __vers2, __ofdt, __platform);
+    /* SJM 12-28-12 - this is the major version used by RLM license manager */
+    __vers = __pv_stralloc(VERS);
+    __vers2 = __pv_stralloc(VERS2);
+    __ofdt = __pv_stralloc(OFDT);
+    __ip2_msg("%s%s of %s (%s).\n", __vers, __vers2, __ofdt, __platform);
 
- __ip_msg("Copyright (c) 1991-2014 Tachyon Design Automation Corp.\n");
- __ip_msg(
-  "  All Rights reserved.  Licensed software subject to prohibitions and\n");
- __ip_msg(
-  "  restrictions.  See OSS CVC artistic license included with release.\n");  
+    __ip_msg("Copyright (c) 1991-2014 Tachyon Design Automation Corp.\n");
+    __ip_msg(
+             "  All Rights reserved.  Licensed software subject to prohibitions and\n");
+    __ip_msg(
+             "  restrictions.  See OSS CVC artistic license included with release.\n");  
 
- __cv_msg("Today is %s.\n", __pvdate);
+    __cv_msg("Today is %s.\n", __pvdate);
 
- if (__help_olp != NULL)
-  {
-   wrhelp();
-   __cv_msg("**Special help mode successfully completed.\n");
-   return(0);
-  }
-
- if (__verb_olp != NULL)
-  {
-   if (!__quiet_msgs)
-    { __verbose = TRUE; __cv_msg("  Verbose mode is on.\n"); }
-  }
- if (__log_s != NULL && strcmp(__log_fnam, DFLT_LOGFNAM) != 0)
-  {
-   if (__verbose)
-    __cv_msg("  Output log will be written to \"%s\".\n", __log_fnam);
-  }
- if (__verbose) __cv_msg("  Invoked by: \"%s\".\n", argv[0]);  
-
- do_args();
-
-/* SJM 12-05-12 - REMOVED EXCEPT FOR PLI SEGV should not happen and for ==
-// for PLI want to be able to trace back not exit
-// #ifndef __NOSIGS__
- =* AIV 09/10/09 need to catch segv and print message *=
- signal(SIGSEGV, (void (*)()) segv_handle);
-// #endif
-=== */
-
- bld_inflist();
-
- __modhdr = __end_mdp = NULL;
-
- __init_acc();
-
- init_modsymtab();
- /* must initialize pli table after file processed */
- init_stsymtab();
-
- /* AIV 12/14/10 - there was a bug with compiling on 32-bit and running */
- /* the compiled sim on 64-bit (with PLI?) moving this down here fixes it */
- /* AIV 03/07/07 - save the memory use after arguments read */
- __mem_cvc_use = __mem_use; 
- __dsnmemp = NULL;
-
- /* --- DBG remove
- if (__verbose) 
-  __cv_msg("  Initialization used %ld bytes of allocated memory (%ld free).\n",
-  __memstr_use + __mem_use + __mem_free);
- --- */
-
- /* SJM 12/05/03 - for now assuming if +config options to specify lib map */ 
- /* file, then do not read default lib.map in cwd - is that correct? */ 
- if (__map_files_hd == NULL)
-  {
-   FILE *fp;
-
-   if ((fp = __tilde_fopen("lib.map", "r")) != NULL)
+    if (__help_olp != NULL)
     {
-     __my_fclose(fp); 
-     __map_files_hd = __map_files_tail = (struct mapfiles_t *) 
-      __my_malloc(sizeof(struct mapfiles_t));
-     __map_files_hd->mapfnam = __pv_stralloc("lib.map");
-     __map_files_hd->mapfnxt = NULL;
+        wrhelp();
+        __cv_msg("**Special help mode successfully completed.\n");
+        return(0);
+    }
+
+    if (__verb_olp != NULL)
+    {
+        if (!__quiet_msgs)
+        { __verbose = TRUE; __cv_msg("  Verbose mode is on.\n"); }
+    }
+    if (__log_s != NULL && strcmp(__log_fnam, DFLT_LOGFNAM) != 0)
+    {
+        if (__verbose)
+            __cv_msg("  Output log will be written to \"%s\".\n", __log_fnam);
+    }
+    if (__verbose) __cv_msg("  Invoked by: \"%s\".\n", argv[0]);  
+
+    do_args();
+
+    /* SJM 12-05-12 - REMOVED EXCEPT FOR PLI SEGV should not happen and for ==
+    // for PLI want to be able to trace back not exit
+    // #ifndef __NOSIGS__
+    =* AIV 09/10/09 need to catch segv and print message *=
+    signal(SIGSEGV, (void (*)()) segv_handle);
+    // #endif
+    === */
+
+    bld_inflist();
+
+    __modhdr = __end_mdp = NULL;
+
+    __init_acc();
+
+    init_modsymtab();
+    /* must initialize pli table after file processed */
+    init_stsymtab();
+
+    /* AIV 12/14/10 - there was a bug with compiling on 32-bit and running */
+    /* the compiled sim on 64-bit (with PLI?) moving this down here fixes it */
+    /* AIV 03/07/07 - save the memory use after arguments read */
+    __mem_cvc_use = __mem_use; 
+    __dsnmemp = NULL;
+
+    /* --- DBG remove
+       if (__verbose) 
+       __cv_msg("  Initialization used %ld bytes of allocated memory (%ld free).\n",
+       __memstr_use + __mem_use + __mem_free);
+       --- */
+
+    /* SJM 12/05/03 - for now assuming if +config options to specify lib map */ 
+    /* file, then do not read default lib.map in cwd - is that correct? */ 
+    if (__map_files_hd == NULL)
+    {
+        FILE *fp;
+
+        if ((fp = __tilde_fopen("lib.map", "r")) != NULL)
+        {
+            __my_fclose(fp); 
+            __map_files_hd = __map_files_tail = (struct mapfiles_t *) 
+                __my_malloc(sizeof(struct mapfiles_t));
+            __map_files_hd->mapfnam = __pv_stralloc("lib.map");
+            __map_files_hd->mapfnxt = NULL;
 #ifndef __CVC_RT__
-     if (__verbose)
-      {
-       __cv_msg(
-        "  Using map.lib config file because no +config options specified.\n");
-      }
+            if (__verbose)
+            {
+                __cv_msg(
+                         "  Using map.lib config file because no +config options specified.\n");
+            }
+#endif
+        }
+#ifndef __CVC_RT__
+        else if (__verbose)
+        {
+            __cv_msg(
+                     "  P1364 2001 config map library not specified - using -y/-v libraries.\n"); 
+        }
 #endif
     }
+
+    /* SJM 12-11-10 - read the config opt file into char strings */
+    /* need to read before parsing src in case any errors in arg (opt) file */
+    /* just read and save here, opt cfg (mostly net tgl) set up happens near */
+    /* end of prep just before setting up idp area */
+    __rd_optcfg_files();
+
 #ifndef __CVC_RT__
-   else if (__verbose)
+    /* SJM 02-17-13 - need to warn if toggle report options but toggle not on */
+    /* and vice versa - need checking before elaborating src */
+    chk_toggle_opt_consistent();
+#endif
+
+    /* read the cfg lib.map file list and build internal d.s. */ 
+#ifndef __CVC_RT__
+    if (__verbose) __cv_msg("  Begin Translation:\n");
+#endif
+
+    if (__map_files_hd != NULL)
     {
-     __cv_msg(
-      "  P1364 2001 config map library not specified - using -y/-v libraries.\n"); 
+        /* SJM - 05/26/04 if config used, ignore any command line .v files */
+#ifndef __CVC_RT__
+        if (__last_inf != __last_optf)
+        {
+            __pv_warn(3138,
+                      "library config used but verilog files specified on command line - files ignored");
+        }
+        if (__verbose) __cv_msg("  Reading library config map.lib files:\n");
+#endif
+        __rd_cfg();
+        if (__cmdl_library == NULL) __cmdl_library = __pv_stralloc("work");
+        /* after expansion, each library element is a concrete file name */
+        __expand_lib_wildcards(); 
+        __rd_ver_cfg_src();
     }
-#endif
-  }
-
- /* SJM 12-11-10 - read the config opt file into char strings */
- /* need to read before parsing src in case any errors in arg (opt) file */
- /* just read and save here, opt cfg (mostly net tgl) set up happens near */
- /* end of prep just before setting up idp area */
- __rd_optcfg_files();
-
-#ifndef __CVC_RT__
- /* SJM 02-17-13 - need to warn if toggle report options but toggle not on */
- /* and vice versa - need checking before elaborating src */
- chk_toggle_opt_consistent();
-#endif
-
- /* read the cfg lib.map file list and build internal d.s. */ 
-#ifndef __CVC_RT__
- if (__verbose) __cv_msg("  Begin Translation:\n");
-#endif
-
- if (__map_files_hd != NULL)
-  {
-   /* SJM - 05/26/04 if config used, ignore any command line .v files */
-#ifndef __CVC_RT__
-   if (__last_inf != __last_optf)
+    else
     {
-     __pv_warn(3138,
-      "library config used but verilog files specified on command line - files ignored");
+        /* use pre-2001 files reading routines */
+        prep_vflist();
+        __rd_ver_src();
     }
-   if (__verbose) __cv_msg("  Reading library config map.lib files:\n");
-#endif
-   __rd_cfg();
-   if (__cmdl_library == NULL) __cmdl_library = __pv_stralloc("work");
-   /* after expansion, each library element is a concrete file name */
-   __expand_lib_wildcards(); 
-   __rd_ver_cfg_src();
-  }
- else
-  {
-   /* use pre-2001 files reading routines */
-   prep_vflist();
-   __rd_ver_src();
-  }
 
- rv = 0;
- if (__parse_only)
-  {
-   __cv_msg("  Parsing only run complete.\n");
-   __my_ftime(&__end_time, &__end_mstime);
-   if (__pv_err_cnt != 0) rv = 1; else rv = 0;
-   goto done2;
-  }
+    rv = 0;
+    if (__parse_only)
+    {
+        __cv_msg("  Parsing only run complete.\n");
+        __my_ftime(&__end_time, &__end_mstime);
+        if (__pv_err_cnt != 0) rv = 1; else rv = 0;
+        goto done2;
+    }
 
 #ifndef __CVC_RT__
- if (__in_ifdef_level != 0)
-  {
-   __pv_err(924, "last `ifdef unterminated in source stream");
-  }
- if (__end_mdp == NULL)
-  {
-   if (__pv_err_cnt != 0)
+    if (__in_ifdef_level != 0)
     {
-     rv = 1;
-     goto err_done;
+        __pv_err(924, "last `ifdef unterminated in source stream");
     }
-   __crit_msg("**Design contains no modules - nothing to do.\n");
-   goto set_etime;
-  }
+    if (__end_mdp == NULL)
+    {
+        if (__pv_err_cnt != 0)
+        {
+            rv = 1;
+            goto err_done;
+        }
+        __crit_msg("**Design contains no modules - nothing to do.\n");
+        goto set_etime;
+    }
 
- /* calls to fixup routines here */
- if (__verbose)
-  {
-   __cv_msg("  Begin Elaboration pass 2:\n");
-  }
- /* if verbose off will not print anything */
- mem_use_msg(FALSE); 
+    /* calls to fixup routines here */
+    if (__verbose)
+    {
+        __cv_msg("  Begin Elaboration pass 2:\n");
+    }
+    /* if verbose off will not print anything */
+    mem_use_msg(FALSE); 
 #endif
- /* AIV 03/07/07 - memory usage is now current minus what is was when */
- /* command line arguments read */
- /* AIV 10/30/08 - moved this back to here - memory can be from source */
- /* reading just as good - was not getting exact match from executable */
- /* for some reason */
- __mem_cvc_use = __mem_use - __mem_cvc_use;
+    /* AIV 03/07/07 - memory usage is now current minus what is was when */
+    /* command line arguments read */
+    /* AIV 10/30/08 - moved this back to here - memory can be from source */
+    /* reading just as good - was not getting exact match from executable */
+    /* for some reason */
+    __mem_cvc_use = __mem_use - __mem_cvc_use;
 
- /* SJM 02-27- 09 - pre fix up (pass 2) that are before gen converge loop */
- /* AIV 07/26/10 - now if there is any error return an exit code 1 */
- /* this was 0 for historical reasons from the Antrim days now do exit */
- if (!__pre_fixup_nl()) { rv = 1; goto err_done; }
+    /* SJM 02-27- 09 - pre fix up (pass 2) that are before gen converge loop */
+    /* AIV 07/26/10 - now if there is any error return an exit code 1 */
+    /* this was 0 for historical reasons from the Antrim days now do exit */
+    if (!__pre_fixup_nl()) { rv = 1; goto err_done; }
 
- /* SJM 01-19-09 - if errors occur in preping con funcs, can't copy wrk sp */ 
- if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
+    /* SJM 01-19-09 - if errors occur in preping con funcs, can't copy wrk sp */ 
+    if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
 
- /* 03-03-09 - this becomes fixup nl if no generates in design */
- if (!__fixup_and_gen_nl()) { rv = 1; goto err_done; }
- if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
+    /* 03-03-09 - this becomes fixup nl if no generates in design */
+    if (!__fixup_and_gen_nl()) { rv = 1; goto err_done; }
+    if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
 
- /* this is new post instance tree, param, xmr fixups - expr chking mostly */
- if (!__fixup2_nl()) { rv = 1; goto err_done; }
- if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
+    /* this is new post instance tree, param, xmr fixups - expr chking mostly */
+    if (!__fixup2_nl()) { rv = 1; goto err_done; }
+    if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
 
- if (__decompile) __do_decompile();
+    if (__decompile) __do_decompile();
 
- /* AIV 04/01/11 - if compiled sim and inline for loop option turned on */
- if (__opt_unroll_loops && __compiled_sim) __try_to_fold_for_loops();
+    /* AIV 04/01/11 - if compiled sim and inline for loop option turned on */
+    if (__opt_unroll_loops && __compiled_sim) __try_to_fold_for_loops();
 
- __my_ftime(&__end_comp_time, &__end_comp_mstime);
- if (__numtopm == 0)
-  {
-   __crit_msg("  Unable to begin simulation - no top level modules.\n");   
+    __my_ftime(&__end_comp_time, &__end_comp_mstime);
+    if (__numtopm == 0)
+    {
+        __crit_msg("  Unable to begin simulation - no top level modules.\n");   
 #ifndef __CVC_RT__
 set_etime:
 #endif
-   __my_ftime(&__end_time, &__end_mstime);
-   rv = 1;
-   goto done2;
-  }
+        __my_ftime(&__end_time, &__end_mstime);
+        rv = 1;
+        goto done2;
+    }
 
- /* SJM 02/26/08 - now also need to bld the various IDP for each module */ 
- /* per instance storage areas for each instance of variable storage */
- /* and know at compile time net list elements such as fixed events */
- /* and nchgs */
- __prep_sim();
+    /* SJM 02/26/08 - now also need to bld the various IDP for each module */ 
+    /* per instance storage areas for each instance of variable storage */
+    /* and know at compile time net list elements such as fixed events */
+    /* and nchgs */
+    __prep_sim();
 
 #ifndef __CVC_RT__
- if (__pv_err_cnt == 0)
-  {
-   if (__prt_stats || __prt_allstats)
+    if (__pv_err_cnt == 0)
     {
-     save_quiet = __quiet_msgs;
-     __quiet_msgs = FALSE;
-     prt_alldesmod_tabs();
-     __quiet_msgs = save_quiet;
+        if (__prt_stats || __prt_allstats)
+        {
+            save_quiet = __quiet_msgs;
+            __quiet_msgs = FALSE;
+            prt_alldesmod_tabs();
+            __quiet_msgs = save_quiet;
+        }
+        else if (__verbose)
+        {
+            save_quiet = __quiet_msgs;
+            __quiet_msgs = FALSE;
+            prt_deswide_stats();
+            __quiet_msgs = save_quiet;
+        }
     }
-   else if (__verbose)
-    {
-     save_quiet = __quiet_msgs;
-     __quiet_msgs = FALSE;
-     prt_deswide_stats();
-     __quiet_msgs = save_quiet;
-    }
-  }
 #endif
- if (__compile_only)
-  {
-   __cv_msg("  Translation only run complete.\n");
-   __my_ftime(&__end_time, &__end_mstime);
-   goto done;
-  }
- if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
+    if (__compile_only)
+    {
+        __cv_msg("  Translation only run complete.\n");
+        __my_ftime(&__end_time, &__end_mstime);
+        goto done;
+    }
+    if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
 
 #ifndef __CVC_RT__
- if (__verbose) __cv_msg("  Begin elaborator load/optimize:\n");
+    if (__verbose) __cv_msg("  Begin elaborator load/optimize:\n");
 #else
- if (__verbose) __cv_msg("  Begin compiled design load:\n");
+    if (__verbose) __cv_msg("  Begin compiled design load:\n");
 #endif
 
- __run_state = SS_LOAD;
- __can_exec = FALSE;
+    __run_state = SS_LOAD;
+    __can_exec = FALSE;
 
- /* prepare and compiled dpi c wrapper file and dl open and dl sym link */
- /* the one routine */
- /* AIV 12/30/10 - this is now done for the compiler as well */
- /* when the compiler enters the interpreter needs the interp wrapper */
- if (__dpi_hdrp != NULL)
-  {
-   /* SJM 11-28-10 - only preprocess dpi import/export routines if at */
-   /* least one dpi routine */
-   if (__dpi_hdrp != NULL) __prep_dpi();
-   if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
+    /* prepare and compiled dpi c wrapper file and dl open and dl sym link */
+    /* the one routine */
+    /* AIV 12/30/10 - this is now done for the compiler as well */
+    /* when the compiler enters the interpreter needs the interp wrapper */
+    if (__dpi_hdrp != NULL)
+    {
+        /* SJM 11-28-10 - only preprocess dpi import/export routines if at */
+        /* least one dpi routine */
+        if (__dpi_hdrp != NULL) __prep_dpi();
+        if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
 
-   /* SJM 10-07-10 LOOAKTME??? - for now even if dpi does not link still */
-   /* try to link other PLI - will exit if errors after there */
-  }
+        /* SJM 10-07-10 LOOAKTME??? - for now even if dpi does not link still */
+        /* try to link other PLI - will exit if errors after there */
+    }
 
 #ifdef __CVC_DEBUG__
- /* RELEASE remove -- */
- /* LOOKATME - for now need this even when read source only mode */
- if (__verbose && !__compiled_sim)
-  {
-   struct mod_t *mdp;
-   int32 tot_var_wrds;
-   tot_var_wrds = 0;
-   for (mdp = __modhdr; mdp != NULL; mdp = mdp->mnxt)
+    /* RELEASE remove -- */
+    /* LOOKATME - for now need this even when read source only mode */
+    if (__verbose && !__compiled_sim)
     {
-     if (mdp->mod_idata_siz == 0) continue;
-     tot_var_wrds += mdp->mod_idata_siz;
+        struct mod_t *mdp;
+        int32 tot_var_wrds;
+        tot_var_wrds = 0;
+        for (mdp = __modhdr; mdp != NULL; mdp = mdp->mnxt)
+        {
+            if (mdp->mod_idata_siz == 0) continue;
+            tot_var_wrds += mdp->mod_idata_siz;
+        }
+        __cv_msg( "  Variable storage in bytes: %d.\n", WRDBYTES*tot_var_wrds);
     }
-   __cv_msg( "  Variable storage in bytes: %d.\n", WRDBYTES*tot_var_wrds);
-  }
 #endif
 
- __sfnam_ind = 0;
- __slin_cnt = 0;
- /* final step in loading is calling vpi_ systf checktf routines */ 
- /* can not do until here because d.s. built */ 
- if (__vpi_sysf_hdr != NULL || __vpi_syst_hdr != NULL)
-  {
-   /* compiletf run in reset state because no time and no events */
-   /* AIV 06/22/10 - no reason to handle vpi for compiling of cvcsim */
-   /* only if running compiled executable does this need to be executed */
-   if (!__compiled_sim || __running_cvc_exe)
+    __sfnam_ind = 0;
+    __slin_cnt = 0;
+    /* final step in loading is calling vpi_ systf checktf routines */ 
+    /* can not do until here because d.s. built */ 
+    if (__vpi_sysf_hdr != NULL || __vpi_syst_hdr != NULL)
     {
-     __run_state = SS_RESET;
-     __exec_all_compiletf_routines();
-     __run_state = SS_LOAD;
+        /* compiletf run in reset state because no time and no events */
+        /* AIV 06/22/10 - no reason to handle vpi for compiling of cvcsim */
+        /* only if running compiled executable does this need to be executed */
+        if (!__compiled_sim || __running_cvc_exe)
+        {
+            __run_state = SS_RESET;
+            __exec_all_compiletf_routines();
+            __run_state = SS_LOAD;
+        }
     }
-  }
 
- /* still can use changed params (either type) to elaborate delays */
- /* from params and set delays even where no delay in source here */
- /* 08-07-07 - notice now can't and don't need to xform expressions */
- /* AIV 06/22/10 - no reason to handle vpi for compiling of cvcsim */
- /* only if running compiled executable does this need to be executed */
- if (__have_vpi_actions && (!__compiled_sim || __running_cvc_exe))
-  {
-    __vpi_endcomp_trycall();
-  }
+    /* still can use changed params (either type) to elaborate delays */
+    /* from params and set delays even where no delay in source here */
+    /* 08-07-07 - notice now can't and don't need to xform expressions */
+    /* AIV 06/22/10 - no reason to handle vpi for compiling of cvcsim */
+    /* only if running compiled executable does this need to be executed */
+    if (__have_vpi_actions && (!__compiled_sim || __running_cvc_exe))
+    {
+        __vpi_endcomp_trycall();
+    }
 
- if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
+    if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
 
- /* SJM 01/14/00 - always can free design pnps since (LABEL does not work */
- /*                (error emitted) in $sdf_annotate systask calls */
- /* SJM for sdf do not free - see if works  
- __free_design_pnps();
- -- */
+    /* SJM 01/14/00 - always can free design pnps since (LABEL does not work */
+    /*                (error emitted) in $sdf_annotate systask calls */
+    /* SJM for sdf do not free - see if works  
+       __free_design_pnps();
+       -- */
 
- /* after here, delays elaborated - only vpi change of delays now possible */
- /* but vpi_ change probably not alloed under P1364 */
- /* SJM 01/14/00 - must allow param changes from label during sim */
- /*                for sdf annotate calls - undefined change points */ 
- /*                also can't remove all 0 paths delays may change still */ 
- if (!__has_sdfann_calls)
-  {
-   /* go through disable all 0 delay only paths - never causes error */
-   if (__rm_path_pnd0s) __rem_0path_dels();
-  }
+    /* after here, delays elaborated - only vpi change of delays now possible */
+    /* but vpi_ change probably not alloed under P1364 */
+    /* SJM 01/14/00 - must allow param changes from label during sim */
+    /*                for sdf annotate calls - undefined change points */ 
+    /*                also can't remove all 0 paths delays may change still */ 
+    if (!__has_sdfann_calls)
+    {
+        /* go through disable all 0 delay only paths - never causes error */
+        if (__rm_path_pnd0s) __rem_0path_dels();
+    }
 
- /* but can remove gates and any added all 0 mipds (maybe added again if */
- /* annotate systask used later) so need messages here */ 
+    /* but can remove gates and any added all 0 mipds (maybe added again if */
+    /* annotate systask used later) so need messages here */ 
 #ifndef __CVC_RT__
- if (__num_rem_gate_pnd0s != 0 && __verbose)
-  {
-   __cv_msg(
-    "  %d (%d flat) gate or udp zero delays coded in source removed.\n",
-    __num_rem_gate_pnd0s, __num_flat_rem_gate_pnd0s);
-  }
- if (__num_rem_mipds != 0 && __verbose)
-  {
-   __cv_msg("  %d flattened bits of 0 delay MIPDS removed - no effect.\n",
-    __num_rem_mipds);
-  } 
+    if (__num_rem_gate_pnd0s != 0 && __verbose)
+    {
+        __cv_msg(
+                 "  %d (%d flat) gate or udp zero delays coded in source removed.\n",
+                 __num_rem_gate_pnd0s, __num_flat_rem_gate_pnd0s);
+    }
+    if (__num_rem_mipds != 0 && __verbose)
+    {
+        __cv_msg("  %d flattened bits of 0 delay MIPDS removed - no effect.\n",
+                 __num_rem_mipds);
+    } 
 #endif
 
- /* SJM 08-07-07 - changed name of xform routine since just xform stmts */ 
- __xform_nl_stmts();
+    /* SJM 08-07-07 - changed name of xform routine since just xform stmts */ 
+    __xform_nl_stmts();
 
 #ifdef __XPROP__
- /* for xprop (not xprop2) find eligible xprop stmts and alloc xprop info */
- if (__xprop && !__xprop2)
-  {
-   __prep_xprop_stmts(FALSE);
-  }
-#endif
-
- /* AIV 05/01/07 - if comiled and have sdf try to fold mipd delays */
- if (__compiled_sim && __has_sdfann_calls)
-  {
-   __convert_mipd_val_inumdels_to_const();
-  }
-
- if (__compiled_sim)
-  {
-   long sav_mem_use;
-   time_t start_cgen, start_mscgen, end_cgen, end_mscgen;
-  
-   __my_ftime(&(start_cgen), &(start_mscgen));
-   sav_mem_use =__mem_use;
-#ifndef __CVC_RT__
-   if (__verbose) __cv_msg("  Begin CVC code generation:\n");
-#endif
-
-   if (!__running_cvc_exe)
+    /* for xprop (not xprop2) find eligible xprop stmts and alloc xprop info */
+    if (__xprop && !__xprop2)
     {
-     /* AIV 02/03/09 - special directive to make runtime CVC binary */
-     /* do not link in __cvc_driver to do code generation */
-#ifndef __CVC_RT__
-     if (!__cvc_driver())
-      {
-       __cv_msg(
-        "  CVC assembly code generation failed - unable to continue.\n");
-       __my_ftime(&__end_time, &__end_mstime);
-       goto done;
-      }
+        __prep_xprop_stmts(FALSE);
+    }
 #endif
-     }
-    else running_bin_setup();
-   __my_ftime(&(end_cgen), &(end_mscgen));
-   if (!__running_cvc_exe)
-    {
-     if (__verbose)
-      {
-#ifdef __CVC_DEBUG__
-       double d1;
 
-       if (__mem_use - sav_mem_use > 0)
+    /* AIV 05/01/07 - if comiled and have sdf try to fold mipd delays */
+    if (__compiled_sim && __has_sdfann_calls)
+    {
+        __convert_mipd_val_inumdels_to_const();
+    }
+
+    if (__compiled_sim)
+    {
+        long sav_mem_use;
+        time_t start_cgen, start_mscgen, end_cgen, end_mscgen;
+
+        __my_ftime(&(start_cgen), &(start_mscgen));
+        sav_mem_use =__mem_use;
+#ifndef __CVC_RT__
+        if (__verbose) __cv_msg("  Begin CVC code generation:\n");
+#endif
+
+        if (!__running_cvc_exe)
         {
-         d1 = 100.0*((double) __mem_use - sav_mem_use)/((double) sav_mem_use);
-         __cv_msg("  Memory unfreed by CVC %ld bytes (%.2lf%% more)\n", 
-          __mem_use - sav_mem_use, d1);
-        }
+            /* AIV 02/03/09 - special directive to make runtime CVC binary */
+            /* do not link in __cvc_driver to do code generation */
+#ifndef __CVC_RT__
+            if (!__cvc_driver())
+            {
+                __cv_msg(
+                         "  CVC assembly code generation failed - unable to continue.\n");
+                __my_ftime(&__end_time, &__end_mstime);
+                goto done;
+            }
 #endif
-       __my_ftime(&end_cgen, &end_mscgen);
-       timd1 = (double) (end_cgen - start_cgen)
-        + ((double) (end_mscgen - start_mscgen))/1000.0;
-       __cv_msg("  CVC compilation %.1lf seconds elapsed.\n", timd1);
+        }
+        else running_bin_setup();
+        __my_ftime(&(end_cgen), &(end_mscgen));
+        if (!__running_cvc_exe)
+        {
+            if (__verbose)
+            {
+#ifdef __CVC_DEBUG__
+                double d1;
+
+                if (__mem_use - sav_mem_use > 0)
+                {
+                    d1 = 100.0*((double) __mem_use - sav_mem_use)/((double) sav_mem_use);
+                    __cv_msg("  Memory unfreed by CVC %ld bytes (%.2lf%% more)\n", 
+                             __mem_use - sav_mem_use, d1);
+                }
+#endif
+                __my_ftime(&end_cgen, &end_mscgen);
+                timd1 = (double) (end_cgen - start_cgen)
+                    + ((double) (end_mscgen - start_mscgen))/1000.0;
+                __cv_msg("  CVC compilation %.1lf seconds elapsed.\n", timd1);
 
 #ifdef __CVC_DEBUG__
-       /* AIV 11/02/07 - print the insn info for devel */
-       __cv_msg(
-       "  CVC total instructions %d spilled %d coalesced %d wide spilled %d printed insn %d.\n", 
-       __insn_count, __spill_nonw_count, __coalesce_count, __spill_count, __insn_print_count);
+                /* AIV 11/02/07 - print the insn info for devel */
+                __cv_msg(
+                         "  CVC total instructions %d spilled %d coalesced %d wide spilled %d printed insn %d.\n", 
+                         __insn_count, __spill_nonw_count, __coalesce_count, __spill_count, __insn_print_count);
 #endif
-      }
-     else
-      {
-       /* AIV 12/21/07 - always print the total compilation time */
-       /* users think that the compilation time is part of the runtime */
-       /* notice this is printf to prevent dumping to log file */
-       if (!__quiet_msgs)
-        {
-         __my_ftime(&end_cgen, &end_mscgen);
-          timd1 = (double) (end_cgen - start_cgen)
-            + ((double) (end_mscgen - start_mscgen))/1000.0;
-         printf("\n  CVC compilation %.1lf seconds elapsed.\n", timd1);
+            }
+            else
+            {
+                /* AIV 12/21/07 - always print the total compilation time */
+                /* users think that the compilation time is part of the runtime */
+                /* notice this is printf to prevent dumping to log file */
+                if (!__quiet_msgs)
+                {
+                    __my_ftime(&end_cgen, &end_mscgen);
+                    timd1 = (double) (end_cgen - start_cgen)
+                        + ((double) (end_mscgen - start_mscgen))/1000.0;
+                    printf("\n  CVC compilation %.1lf seconds elapsed.\n", timd1);
+                }
+            }
         }
-      }
     }
-  }
- /* if compile only print message and go to done */
+    /* if compile only print message and go to done */
 #ifndef __CVC_RT__
- if (__compiled_sim)
-  { 
-   /* if DPI import/exports C code may not have linked properly */
-   /* due to naming/linking issues caused by user code */
-   if (__dpi_hdrp != NULL)
-    {
-     if (stat(__exe_name, &st) != 0)
-      {
-       __pv_ferr(4836, "EXECUTABLE %s failed to link - probably due to inconsistent naming of DPI functions", __exe_name);
-      }
+    if (__compiled_sim)
+    { 
+        /* if DPI import/exports C code may not have linked properly */
+        /* due to naming/linking issues caused by user code */
+        if (__dpi_hdrp != NULL)
+        {
+            if (stat(__exe_name, &st) != 0)
+            {
+                __pv_ferr(4836, "EXECUTABLE %s failed to link - probably due to inconsistent naming of DPI functions", __exe_name);
+            }
+        }
+        else
+        {
+            __cv_msg("\n  EXECUTABLE SAVED TO '%s'.\n\n", __exe_name); 
+        }
+        __my_ftime(&__end_time, &__end_mstime);
+        goto done;
     }
-   else
-    {
-     __cv_msg("\n  EXECUTABLE SAVED TO '%s'.\n\n", __exe_name); 
-    }
-   __my_ftime(&__end_time, &__end_mstime);
-   goto done;
-  }
 #endif
 
- /* now that all storage allocated and given some val, call checktf */
- /* routines, these can call anything not sim queue depended but shouldn't */
- if (__tfrec_hdr != NULL)
-  {
-   __run_state = SS_RESET;
-   __call_all_checktfs();
-   __run_state = SS_LOAD;
-  }
+    /* now that all storage allocated and given some val, call checktf */
+    /* routines, these can call anything not sim queue depended but shouldn't */
+    if (__tfrec_hdr != NULL)
+    {
+        __run_state = SS_RESET;
+        __call_all_checktfs();
+        __run_state = SS_LOAD;
+    }
 
- /* SJM 05/04/05 - now can only initialize dce previous values */
- __initialize_dsgn_dces();
+    /* SJM 05/04/05 - now can only initialize dce previous values */
+    __initialize_dsgn_dces();
 
- __init_sim();
- __my_ftime(&__end_prep_time, &__end_prep_mstime);
+    __init_sim();
+    __my_ftime(&__end_prep_time, &__end_prep_mstime);
 
- if (__verbose) __cv_msg("  Begin simulation:\n");
- if (__verbose) __cv_msg("\n");
+    if (__verbose) __cv_msg("  Begin simulation:\n");
+    if (__verbose) __cv_msg("\n");
 
- /* on setup returns 0, on lng jmp returns 1, but always just exec sim */
- /* since restart */
- /* on set returns 0, do not run re-init code */
- if (setjmp(__reset_jmpbuf) != 0)
-  {
-   if (__tfrec_hdr != NULL) __call_misctfs_streset();
-   if (__have_vpi_actions) __vpi_startreset_trycall();
-   __now_resetting = TRUE;
-   __run_state = SS_RESET;
-   /* change to sim run state in here */
-   __reset_to_time0();
-   /* by here state back to SIM */
-  }
+    /* on setup returns 0, on lng jmp returns 1, but always just exec sim */
+    /* since restart */
+    /* on set returns 0, do not run re-init code */
+    if (setjmp(__reset_jmpbuf) != 0)
+    {
+        if (__tfrec_hdr != NULL) __call_misctfs_streset();
+        if (__have_vpi_actions) __vpi_startreset_trycall();
+        __now_resetting = TRUE;
+        __run_state = SS_RESET;
+        /* change to sim run state in here */
+        __reset_to_time0();
+        /* by here state back to SIM */
+    }
 
 #ifdef __XPROP__
- /* if xprop and compiled sim remove dummy non-blocking task modules */
- if (__xprop && __compiled_sim)
-  {
-   struct mod_t *mdp;
-
-   for (mdp = __modhdr; mdp != NULL; mdp = mdp->mnxt)
+    /* if xprop and compiled sim remove dummy non-blocking task modules */
+    if (__xprop && __compiled_sim)
     {
-     /* DBG remove -- */
-     if (mdp->xprop_nb_taskp == NULL) __misc_terr(__FILE__, __LINE__);
-     /* --- */
-     /* just point to the first real task */
-     mdp->mtasks = mdp->mtasks->tsknxt;
+        struct mod_t *mdp;
+
+        for (mdp = __modhdr; mdp != NULL; mdp = mdp->mnxt)
+        {
+            /* DBG remove -- */
+            if (mdp->xprop_nb_taskp == NULL) __misc_terr(__FILE__, __LINE__);
+            /* --- */
+            /* just point to the first real task */
+            mdp->mtasks = mdp->mtasks->tsknxt;
+        }
     }
-  }
 #endif
 
- __pv_sim();
+    __pv_sim();
 
- /* LOOKATME - think also call end sim cb here but LRM says $finish */
- if (__have_vpi_actions) __vpi_endsim_trycall();
+    /* LOOKATME - think also call end sim cb here but LRM says $finish */
+    if (__have_vpi_actions) __vpi_endsim_trycall();
 
- /* LOOKATME - remove since does not match ovi __cv_msg("\n"); */
- /* notice must know current end time */
- __my_ftime(&__end_time, &__end_mstime);
- __prt_end_msg();
- goto done;
+    /* LOOKATME - remove since does not match ovi __cv_msg("\n"); */
+    /* notice must know current end time */
+    __my_ftime(&__end_time, &__end_mstime);
+    __prt_end_msg();
+    goto done;
 
 err_done:
- __cv_msg("  Unable to begin simulation.\n");
- __my_ftime(&__end_time, &__end_mstime);
+    __cv_msg("  Unable to begin simulation.\n");
+    __my_ftime(&__end_time, &__end_mstime);
 
 done:
- if (__dv_fd != -1) __my_dv_flush();
- if (__verbose)
-  {
-   if (__dv_fd != -1)
+    if (__dv_fd != -1) __my_dv_flush();
+    if (__verbose)
     {
-     if ((t1 = lseek(__dv_fd, 0, SEEK_END)) != -1) 
-      {
-       __cv_msg("  $dumpvars %ld bytes written to file \"%s\".\n", t1,
-        __dv_fnam); 
-      }
-    } 
-  }
- flush_verbose_dumpports_files();
+        if (__dv_fd != -1)
+        {
+            if ((t1 = lseek(__dv_fd, 0, SEEK_END)) != -1) 
+            {
+                __cv_msg("  $dumpvars %ld bytes written to file \"%s\".\n", t1,
+                         __dv_fnam); 
+            }
+        } 
+    }
+    flush_verbose_dumpports_files();
 
- /* close FST file */
- if (__fst_ctx != NULL) __fst_close();
+    /* close FST file */
+    if (__fst_ctx != NULL) __fst_close();
 done2:
- /* DBG remove --- */
- if (__xspi != -1 || __itspi != -1 || __fcspi != -1)
-  __misc_terr(__FILE__, __LINE__);
- /* --- */
- strcpy(s1, ctime(&__end_time));
+    /* DBG remove --- */
+    if (__xspi != -1 || __itspi != -1 || __fcspi != -1)
+        __misc_terr(__FILE__, __LINE__);
+    /* --- */
+    strcpy(s1, ctime(&__end_time));
 
- s1[24] = '\0';
- __pvdate = __pv_stralloc(s1);
- timd1 = (double) (__end_time - __start_time)
-  + ((double) (__end_mstime - __start_mstime))/1000.0;
- __cv_msg("End of %s%s at %s (elapsed %.1lf seconds).\n",
-  __vers,__vers2, __pvdate, timd1);
- /* AIV 07/26/10 - now if errors will return with exit 1 */
- if (rv != 0) __my_exit(rv, TRUE);
- else __my_exit(rv, FALSE);
- /* needed to stop warns but exit prevents control from reaching here */
- return(0);
+    s1[24] = '\0';
+    __pvdate = __pv_stralloc(s1);
+    timd1 = (double) (__end_time - __start_time)
+        + ((double) (__end_mstime - __start_mstime))/1000.0;
+    __cv_msg("End of %s%s at %s (elapsed %.1lf seconds).\n",
+             __vers,__vers2, __pvdate, timd1);
+    /* AIV 07/26/10 - now if errors will return with exit 1 */
+    if (rv != 0) __my_exit(rv, TRUE);
+    else __my_exit(rv, FALSE);
+    /* needed to stop warns but exit prevents control from reaching here */
+    return(0);
 }
 
 /*
