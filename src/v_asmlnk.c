@@ -2656,13 +2656,13 @@ static void emit_oneflowg_asm(FILE *fp, struct flowg_t *fgp, struct mod_t *mdp,
  */
 static void emit_one_insn(FILE *fp, char *s, ...)
 {
- va_list va;
+    va_list va;
 
- /* just inc and print */
- __num_print_asm_insn++;
- va_start(va, s);
- vfprintf(fp, s, va);
- va_end(va);
+    /* just inc and print */
+    __num_print_asm_insn++;
+    va_start(va, s);
+    vfprintf(fp, s, va);
+    va_end(va);
 }
 
    
@@ -6705,41 +6705,41 @@ static void emit_boiler_plate_enter_next_events(FILE *fp)
  */
 static void emit_fixed_wrapper_ptrs(FILE *fp)
 {
- emit_one_insn(fp, ".globl __init_glbs_wrps\n");
- emit_one_insn(fp, "__init_glbs_wrps:\n");
+    emit_one_insn(fp, ".globl __init_glbs_wrps\n");
+    emit_one_insn(fp, "__init_glbs_wrps:\n");
 
- ll_awr_set_glb_movl(fp, "__process_compiled_thrd_ev_enterp", "THRD_EV");
- ll_awr_set_glb_movl(fp, "__process_wire_ev_enterp", "WIRE_EV");
- ll_awr_set_glb_movl(fp, "__process_nbpa_varndx_ev_enterp",
-  "NBPA_VARNDX_CONCAT_EV");
- ll_awr_set_glb_movl(fp, "__process_trpthdst_ev_enterp", "TRPTHDST_EV");
- ll_awr_set_glb_movl(fp, "__process_gatechg_ev_enterp", "GATECHG_WIDE_EV");
+    ll_awr_set_glb_movl(fp, "__process_compiled_thrd_ev_enterp", "THRD_EV");
+    ll_awr_set_glb_movl(fp, "__process_wire_ev_enterp", "WIRE_EV");
+    ll_awr_set_glb_movl(fp, "__process_nbpa_varndx_ev_enterp",
+                        "NBPA_VARNDX_CONCAT_EV");
+    ll_awr_set_glb_movl(fp, "__process_trpthdst_ev_enterp", "TRPTHDST_EV");
+    ll_awr_set_glb_movl(fp, "__process_gatechg_ev_enterp", "GATECHG_WIDE_EV");
 
- /* SJM 09/04/08 - for now since assign struct fld can't assign at alnk time */
+    /* SJM 09/04/08 - for now since assign struct fld can't assign at alnk time */
 
- ll_awr_set_glb_movl(fp, "__process_next_nchg_enterp", "ALLOC_NCHG_EV");
- ll_awr_set_glb_movl(fp, "__process_next_ev_enterp", "NEXT_EV");
- ll_awr_set_glb_movl(fp, "__process_next_event_free_enterp", "NEXT_FREE_EV");
- ll_awr_set_glb_movl(fp, "__process_free_ev_pnd0_enterp",
-  "FREE_EVENT_PND0_EV");
- ll_awr_set_glb_movl(fp, "__free_event_pnd0_tevp", "free_event_pnd0_tev");
- ll_awr_set_glb_movl(fp, "__process_free_ev_enterp", "FREE_EVENT_EV");
+    ll_awr_set_glb_movl(fp, "__process_next_nchg_enterp", "ALLOC_NCHG_EV");
+    ll_awr_set_glb_movl(fp, "__process_next_ev_enterp", "NEXT_EV");
+    ll_awr_set_glb_movl(fp, "__process_next_event_free_enterp", "NEXT_FREE_EV");
+    ll_awr_set_glb_movl(fp, "__process_free_ev_pnd0_enterp",
+                        "FREE_EVENT_PND0_EV");
+    ll_awr_set_glb_movl(fp, "__free_event_pnd0_tevp", "free_event_pnd0_tev");
+    ll_awr_set_glb_movl(fp, "__process_free_ev_enterp", "FREE_EVENT_EV");
 
- /* SJM 08/08/08 - forgot this dlsym link */
- /* SJM 08/24/08 - next nbmem free enterp now gone */ 
- ll_awr_set_glb_movl(fp, "__first_enterp", "SIM_ENTER_EV");
- ll_awr_set_glb_movl(fp, "__delay_callback_enterp", "DELAY_CB_EV");
- ll_awr_set_glb_movl(fp, "__process_putpdel_enterp", "PROCESS_PUTPDEL_EV");
- ll_awr_set_glb_movl(fp, "__process_putpdel_enterp", "PROCESS_PUTPDEL_EV");
- ll_awr_set_glb_movl(fp, "__setdel_call_misctf_enterp",
-  "SETDEL_CALL_MISCTF_EV");
- ll_awr_set_glb_movl(fp, "__sync_call_misctf_enterp", "SYNC_CALL_MISCTF_EV");
+    /* SJM 08/08/08 - forgot this dlsym link */
+    /* SJM 08/24/08 - next nbmem free enterp now gone */ 
+    ll_awr_set_glb_movl(fp, "__first_enterp", "SIM_ENTER_EV");
+    ll_awr_set_glb_movl(fp, "__delay_callback_enterp", "DELAY_CB_EV");
+    ll_awr_set_glb_movl(fp, "__process_putpdel_enterp", "PROCESS_PUTPDEL_EV");
+    ll_awr_set_glb_movl(fp, "__process_putpdel_enterp", "PROCESS_PUTPDEL_EV");
+    ll_awr_set_glb_movl(fp, "__setdel_call_misctf_enterp",
+                        "SETDEL_CALL_MISCTF_EV");
+    ll_awr_set_glb_movl(fp, "__sync_call_misctf_enterp", "SYNC_CALL_MISCTF_EV");
 
- /* AIV 01/09/08 - pli can still alloc/cancel events */
- ll_awr_set_glb_movl(fp, "__process_cancel_ev_enterp", "CANCEL_EV");
- ll_awr_set_glb_movl(fp, "__process_vpi_varputv_enterp", "VPI_VARPUTV_EV");
- ll_awr_set_glb_movl(fp, "__process_vpidrv_enterp", "VPIDRV_EV");
- emit_one_insn(fp, "ret\n");
+    /* AIV 01/09/08 - pli can still alloc/cancel events */
+    ll_awr_set_glb_movl(fp, "__process_cancel_ev_enterp", "CANCEL_EV");
+    ll_awr_set_glb_movl(fp, "__process_vpi_varputv_enterp", "VPI_VARPUTV_EV");
+    ll_awr_set_glb_movl(fp, "__process_vpidrv_enterp", "VPIDRV_EV");
+    emit_one_insn(fp, "ret\n");
 }
 
 #ifdef __CVC32__
@@ -9784,17 +9784,17 @@ static void ll_awr_set_stmt_entptr(FILE *fp, char *dst_amstr, int32 sti)
  * where EAX always constantly globbered anyway
  */
 static void ll_awr_set_glb_movl(FILE *fp, char *glb_rt_varnam,
- char *glb_asmlabnam) 
+                                char *glb_asmlabnam) 
 {
- if (__opt_debug_flg)
-  {
-   emit_one_insn(fp, "\n# c: %s = &(%s);\n", glb_rt_varnam, glb_asmlabnam);
-  }
+    if (__opt_debug_flg)
+    {
+        emit_one_insn(fp, "\n# c: %s = &(%s);\n", glb_rt_varnam, glb_asmlabnam);
+    }
 #ifdef __CVC32__
- /* AIV 01/25/11 - need to have a movq here for 64-bit */
- emit_one_insn(fp, "\tmovl\t$%s, %s\n", glb_asmlabnam, glb_rt_varnam); 
+    /* AIV 01/25/11 - need to have a movq here for 64-bit */
+    emit_one_insn(fp, "\tmovl\t$%s, %s\n", glb_asmlabnam, glb_rt_varnam); 
 #else
- emit_one_insn(fp, "\tmovq\t$%s, %s\n", glb_asmlabnam, glb_rt_varnam); 
+    emit_one_insn(fp, "\tmovq\t$%s, %s\n", glb_asmlabnam, glb_rt_varnam); 
 #endif
 }
 

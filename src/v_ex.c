@@ -8907,65 +8907,65 @@ extern void __emit_stsk_endmsg(void)
  */
 extern void __exec_var_decl_init_assigns(void)
 {
- int32 ii;
- struct varinitlst_t *initp;
- struct net_t *np;
- struct expr_t *xp; 
- struct xstk_t *xsp;
- struct mod_t *mdp;
- decl_idp_locals_;
+    int32 ii;
+    struct varinitlst_t *initp;
+    struct net_t *np;
+    struct expr_t *xp; 
+    struct xstk_t *xsp;
+    struct mod_t *mdp;
+    decl_idp_locals_;
 
- for (mdp = __modhdr; mdp != NULL; mdp = mdp->mnxt)
-  {
-   if (mdp->mvarinits == NULL) continue; 
-
-   /* save arguments only once */
-   save_idp_(); 
-   for (ii = 0; ii < mdp->flatinum; ii++)
+    for (mdp = __modhdr; mdp != NULL; mdp = mdp->mnxt)
     {
-     /* just push globals no need to save */
-     set_idp_(mdp->moditps[ii]->it_idp); 
-     
-     for (initp = mdp->mvarinits; initp != NULL; initp = initp->varinitnxt)
-      { 
-       xp = initp->init_xp;
-       np = initp->init_syp->el.enp;
-       /* notice this code is almost same as eval assign rhsexpr except */ 
-       /* do not have lhs expr but instead have net */
-       xsp = __eval_xpr(initp->init_xp);
-       if (np->ntyp == N_REAL)
-        { 
-         if (!xp->is_real) __cnv_stk_fromreg_toreal(xsp, (xp->has_sign == 1));
-        }
-       else if (np->ntyp == N_STRING)
+        if (mdp->mvarinits == NULL) continue; 
+
+        /* save arguments only once */
+        save_idp_(); 
+        for (ii = 0; ii < mdp->flatinum; ii++)
         {
-         __st_string_val(np, xsp->ap, xsp->xslen);
-         __pop_xstk();
-         continue;
-        }
-       else
-        { 
-         if (xp->is_real) __cnv_stk_fromreal_toreg32(xsp);
+            /* just push globals no need to save */
+            set_idp_(mdp->moditps[ii]->it_idp); 
 
-         if (xsp->xslen > np->nwid) __narrow_sizchg(xsp, np->nwid);
-         else if (xsp->xslen < np->nwid)
-          {
-           if (xp->has_sign) __sgn_xtnd_widen(xsp, np->nwid);
-           else __sizchg_widen(xsp, np->nwid);
-          }
-        }
+            for (initp = mdp->mvarinits; initp != NULL; initp = initp->varinitnxt)
+            { 
+                xp = initp->init_xp;
+                np = initp->init_syp->el.enp;
+                /* notice this code is almost same as eval assign rhsexpr except */ 
+                /* do not have lhs expr but instead have net */
+                xsp = __eval_xpr(initp->init_xp);
+                if (np->ntyp == N_REAL)
+                { 
+                    if (!xp->is_real) __cnv_stk_fromreg_toreal(xsp, (xp->has_sign == 1));
+                }
+                else if (np->ntyp == N_STRING)
+                {
+                    __st_string_val(np, xsp->ap, xsp->xslen);
+                    __pop_xstk();
+                    continue;
+                }
+                else
+                { 
+                    if (xp->is_real) __cnv_stk_fromreal_toreg32(xsp);
 
-       /* notice may need change store here - works because netchg list hd */
-       /* initialized in init stim so at end of first time 0 queue segment */
-       /* the changes will be processed */
-       if (np->nchg_nd_chgstore) __chg_st_val(np, xsp->ap, xsp->bp);
-       else __st_val(np, xsp->ap, xsp->bp, xsp->xslen);
-       __pop_xstk();
-      }
-     /* restore istk globals */
-     restore_idp_();
+                    if (xsp->xslen > np->nwid) __narrow_sizchg(xsp, np->nwid);
+                    else if (xsp->xslen < np->nwid)
+                    {
+                        if (xp->has_sign) __sgn_xtnd_widen(xsp, np->nwid);
+                        else __sizchg_widen(xsp, np->nwid);
+                    }
+                }
+
+                /* notice may need change store here - works because netchg list hd */
+                /* initialized in init stim so at end of first time 0 queue segment */
+                /* the changes will be processed */
+                if (np->nchg_nd_chgstore) __chg_st_val(np, xsp->ap, xsp->bp);
+                else __st_val(np, xsp->ap, xsp->bp, xsp->xslen);
+                __pop_xstk();
+            }
+            /* restore istk globals */
+            restore_idp_();
+        }
     }
-  }
 }
 
 /* 

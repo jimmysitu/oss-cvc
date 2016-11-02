@@ -1493,562 +1493,562 @@ extern const char __pv_ctab[];
  */
 extern int32 __dig_main(int32 argc, char **argv)
 {
- int32 rv; 
- long t1;
- double timd1;
- char s1[RECLEN];
+    int32 rv; 
+    long t1;
+    double timd1;
+    char s1[RECLEN];
 #ifndef __CVC_RT__
- int32 save_quiet;
- struct stat st;
+    int32 save_quiet;
+    struct stat st;
 #endif
 
- /* only does something if db malloc define set */ 
- __setup_dbmalloc();
+    /* only does something if db malloc define set */ 
+    __setup_dbmalloc();
 
- __start_sp = __end_sp = NULL;
- __log_s = NULL;
- /* set compilation int32 signal and save entry signal so can restore */
+    __start_sp = __end_sp = NULL;
+    __log_s = NULL;
+    /* set compilation int32 signal and save entry signal so can restore */
 #ifndef __NOSIGS__
 #if defined(INTSIGS)
- __old_int_sig = (sighandler *) signal(SIGINT, __comp_sigint_handler);
+    __old_int_sig = (sighandler *) signal(SIGINT, __comp_sigint_handler);
 #else
- __old_int_sig = (sighandler *) signal(SIGINT,
-   (void (*)()) __comp_sigint_handler);
+    __old_int_sig = (sighandler *) signal(SIGINT,
+                                          (void (*)()) __comp_sigint_handler);
 #endif
 #endif
 
- init_glbs();
+    init_glbs();
 
 
- /* vpi argument special format argv only set if needed */
- __vpi_argc = 0;
- __vpi_argv = NULL;
- /* no by convention argv 0 always has program name */
- __vpi_argv0 = __pv_stralloc(argv[0]);
+    /* vpi argument special format argv only set if needed */
+    __vpi_argc = 0;
+    __vpi_argv = NULL;
+    /* no by convention argv 0 always has program name */
+    __vpi_argv0 = __pv_stralloc(argv[0]);
 
- /* expand options so have list that looks as if all on command line */
- xpnd_args(argc, argv);
+    /* expand options so have list that looks as if all on command line */
+    xpnd_args(argc, argv);
 
- /* process special early options - any errors here only to std out */
- /* notice no verbose message for quiet */
- if (__quiet_olp != NULL)
-  {
-   __quiet_msgs = TRUE;
-   /* vendor1 runs with -q need to allow verbose switches to be turned on */ 
-   __verbose = FALSE;
-  }
- open_logfile();
+    /* process special early options - any errors here only to std out */
+    /* notice no verbose message for quiet */
+    if (__quiet_olp != NULL)
+    {
+        __quiet_msgs = TRUE;
+        /* vendor1 runs with -q need to allow verbose switches to be turned on */ 
+        __verbose = FALSE;
+    }
+    open_logfile();
 
 #ifdef __linux__
 #ifdef __ELF__
- __platform = __pv_stralloc("Linux-elf");
+    __platform = __pv_stralloc("Linux-elf");
 #else
- __platform = __pv_stralloc("Linux-aout");
+    __platform = __pv_stralloc("Linux-aout");
 #endif
 #endif
 
- /* SJM 12-28-12 - this is the major version used by RLM license manager */
- __vers = __pv_stralloc(VERS);
- __vers2 = __pv_stralloc(VERS2);
- __ofdt = __pv_stralloc(OFDT);
- __ip2_msg("%s%s of %s (%s).\n", __vers, __vers2, __ofdt, __platform);
+    /* SJM 12-28-12 - this is the major version used by RLM license manager */
+    __vers = __pv_stralloc(VERS);
+    __vers2 = __pv_stralloc(VERS2);
+    __ofdt = __pv_stralloc(OFDT);
+    __ip2_msg("%s%s of %s (%s).\n", __vers, __vers2, __ofdt, __platform);
 
- __ip_msg("Copyright (c) 1991-2014 Tachyon Design Automation Corp.\n");
- __ip_msg(
-  "  All Rights reserved.  Licensed software subject to prohibitions and\n");
- __ip_msg(
-  "  restrictions.  See OSS CVC artistic license included with release.\n");  
+    __ip_msg("Copyright (c) 1991-2014 Tachyon Design Automation Corp.\n");
+    __ip_msg(
+             "  All Rights reserved.  Licensed software subject to prohibitions and\n");
+    __ip_msg(
+             "  restrictions.  See OSS CVC artistic license included with release.\n");  
 
- __cv_msg("Today is %s.\n", __pvdate);
+    __cv_msg("Today is %s.\n", __pvdate);
 
- if (__help_olp != NULL)
-  {
-   wrhelp();
-   __cv_msg("**Special help mode successfully completed.\n");
-   return(0);
-  }
-
- if (__verb_olp != NULL)
-  {
-   if (!__quiet_msgs)
-    { __verbose = TRUE; __cv_msg("  Verbose mode is on.\n"); }
-  }
- if (__log_s != NULL && strcmp(__log_fnam, DFLT_LOGFNAM) != 0)
-  {
-   if (__verbose)
-    __cv_msg("  Output log will be written to \"%s\".\n", __log_fnam);
-  }
- if (__verbose) __cv_msg("  Invoked by: \"%s\".\n", argv[0]);  
-
- do_args();
-
-/* SJM 12-05-12 - REMOVED EXCEPT FOR PLI SEGV should not happen and for ==
-// for PLI want to be able to trace back not exit
-// #ifndef __NOSIGS__
- =* AIV 09/10/09 need to catch segv and print message *=
- signal(SIGSEGV, (void (*)()) segv_handle);
-// #endif
-=== */
-
- bld_inflist();
-
- __modhdr = __end_mdp = NULL;
-
- __init_acc();
-
- init_modsymtab();
- /* must initialize pli table after file processed */
- init_stsymtab();
-
- /* AIV 12/14/10 - there was a bug with compiling on 32-bit and running */
- /* the compiled sim on 64-bit (with PLI?) moving this down here fixes it */
- /* AIV 03/07/07 - save the memory use after arguments read */
- __mem_cvc_use = __mem_use; 
- __dsnmemp = NULL;
-
- /* --- DBG remove
- if (__verbose) 
-  __cv_msg("  Initialization used %ld bytes of allocated memory (%ld free).\n",
-  __memstr_use + __mem_use + __mem_free);
- --- */
-
- /* SJM 12/05/03 - for now assuming if +config options to specify lib map */ 
- /* file, then do not read default lib.map in cwd - is that correct? */ 
- if (__map_files_hd == NULL)
-  {
-   FILE *fp;
-
-   if ((fp = __tilde_fopen("lib.map", "r")) != NULL)
+    if (__help_olp != NULL)
     {
-     __my_fclose(fp); 
-     __map_files_hd = __map_files_tail = (struct mapfiles_t *) 
-      __my_malloc(sizeof(struct mapfiles_t));
-     __map_files_hd->mapfnam = __pv_stralloc("lib.map");
-     __map_files_hd->mapfnxt = NULL;
+        wrhelp();
+        __cv_msg("**Special help mode successfully completed.\n");
+        return(0);
+    }
+
+    if (__verb_olp != NULL)
+    {
+        if (!__quiet_msgs)
+        { __verbose = TRUE; __cv_msg("  Verbose mode is on.\n"); }
+    }
+    if (__log_s != NULL && strcmp(__log_fnam, DFLT_LOGFNAM) != 0)
+    {
+        if (__verbose)
+            __cv_msg("  Output log will be written to \"%s\".\n", __log_fnam);
+    }
+    if (__verbose) __cv_msg("  Invoked by: \"%s\".\n", argv[0]);  
+
+    do_args();
+
+    /* SJM 12-05-12 - REMOVED EXCEPT FOR PLI SEGV should not happen and for ==
+    // for PLI want to be able to trace back not exit
+    // #ifndef __NOSIGS__
+    =* AIV 09/10/09 need to catch segv and print message *=
+    signal(SIGSEGV, (void (*)()) segv_handle);
+    // #endif
+    === */
+
+    bld_inflist();
+
+    __modhdr = __end_mdp = NULL;
+
+    __init_acc();
+
+    init_modsymtab();
+    /* must initialize pli table after file processed */
+    init_stsymtab();
+
+    /* AIV 12/14/10 - there was a bug with compiling on 32-bit and running */
+    /* the compiled sim on 64-bit (with PLI?) moving this down here fixes it */
+    /* AIV 03/07/07 - save the memory use after arguments read */
+    __mem_cvc_use = __mem_use; 
+    __dsnmemp = NULL;
+
+    /* --- DBG remove
+       if (__verbose) 
+       __cv_msg("  Initialization used %ld bytes of allocated memory (%ld free).\n",
+       __memstr_use + __mem_use + __mem_free);
+       --- */
+
+    /* SJM 12/05/03 - for now assuming if +config options to specify lib map */ 
+    /* file, then do not read default lib.map in cwd - is that correct? */ 
+    if (__map_files_hd == NULL)
+    {
+        FILE *fp;
+
+        if ((fp = __tilde_fopen("lib.map", "r")) != NULL)
+        {
+            __my_fclose(fp); 
+            __map_files_hd = __map_files_tail = (struct mapfiles_t *) 
+                __my_malloc(sizeof(struct mapfiles_t));
+            __map_files_hd->mapfnam = __pv_stralloc("lib.map");
+            __map_files_hd->mapfnxt = NULL;
 #ifndef __CVC_RT__
-     if (__verbose)
-      {
-       __cv_msg(
-        "  Using map.lib config file because no +config options specified.\n");
-      }
+            if (__verbose)
+            {
+                __cv_msg(
+                         "  Using map.lib config file because no +config options specified.\n");
+            }
+#endif
+        }
+#ifndef __CVC_RT__
+        else if (__verbose)
+        {
+            __cv_msg(
+                     "  P1364 2001 config map library not specified - using -y/-v libraries.\n"); 
+        }
 #endif
     }
+
+    /* SJM 12-11-10 - read the config opt file into char strings */
+    /* need to read before parsing src in case any errors in arg (opt) file */
+    /* just read and save here, opt cfg (mostly net tgl) set up happens near */
+    /* end of prep just before setting up idp area */
+    __rd_optcfg_files();
+
 #ifndef __CVC_RT__
-   else if (__verbose)
+    /* SJM 02-17-13 - need to warn if toggle report options but toggle not on */
+    /* and vice versa - need checking before elaborating src */
+    chk_toggle_opt_consistent();
+#endif
+
+    /* read the cfg lib.map file list and build internal d.s. */ 
+#ifndef __CVC_RT__
+    if (__verbose) __cv_msg("  Begin Translation:\n");
+#endif
+
+    if (__map_files_hd != NULL)
     {
-     __cv_msg(
-      "  P1364 2001 config map library not specified - using -y/-v libraries.\n"); 
+        /* SJM - 05/26/04 if config used, ignore any command line .v files */
+#ifndef __CVC_RT__
+        if (__last_inf != __last_optf)
+        {
+            __pv_warn(3138,
+                      "library config used but verilog files specified on command line - files ignored");
+        }
+        if (__verbose) __cv_msg("  Reading library config map.lib files:\n");
+#endif
+        __rd_cfg();
+        if (__cmdl_library == NULL) __cmdl_library = __pv_stralloc("work");
+        /* after expansion, each library element is a concrete file name */
+        __expand_lib_wildcards(); 
+        __rd_ver_cfg_src();
     }
-#endif
-  }
-
- /* SJM 12-11-10 - read the config opt file into char strings */
- /* need to read before parsing src in case any errors in arg (opt) file */
- /* just read and save here, opt cfg (mostly net tgl) set up happens near */
- /* end of prep just before setting up idp area */
- __rd_optcfg_files();
-
-#ifndef __CVC_RT__
- /* SJM 02-17-13 - need to warn if toggle report options but toggle not on */
- /* and vice versa - need checking before elaborating src */
- chk_toggle_opt_consistent();
-#endif
-
- /* read the cfg lib.map file list and build internal d.s. */ 
-#ifndef __CVC_RT__
- if (__verbose) __cv_msg("  Begin Translation:\n");
-#endif
-
- if (__map_files_hd != NULL)
-  {
-   /* SJM - 05/26/04 if config used, ignore any command line .v files */
-#ifndef __CVC_RT__
-   if (__last_inf != __last_optf)
+    else
     {
-     __pv_warn(3138,
-      "library config used but verilog files specified on command line - files ignored");
+        /* use pre-2001 files reading routines */
+        prep_vflist();
+        __rd_ver_src();
     }
-   if (__verbose) __cv_msg("  Reading library config map.lib files:\n");
-#endif
-   __rd_cfg();
-   if (__cmdl_library == NULL) __cmdl_library = __pv_stralloc("work");
-   /* after expansion, each library element is a concrete file name */
-   __expand_lib_wildcards(); 
-   __rd_ver_cfg_src();
-  }
- else
-  {
-   /* use pre-2001 files reading routines */
-   prep_vflist();
-   __rd_ver_src();
-  }
 
- rv = 0;
- if (__parse_only)
-  {
-   __cv_msg("  Parsing only run complete.\n");
-   __my_ftime(&__end_time, &__end_mstime);
-   if (__pv_err_cnt != 0) rv = 1; else rv = 0;
-   goto done2;
-  }
+    rv = 0;
+    if (__parse_only)
+    {
+        __cv_msg("  Parsing only run complete.\n");
+        __my_ftime(&__end_time, &__end_mstime);
+        if (__pv_err_cnt != 0) rv = 1; else rv = 0;
+        goto done2;
+    }
 
 #ifndef __CVC_RT__
- if (__in_ifdef_level != 0)
-  {
-   __pv_err(924, "last `ifdef unterminated in source stream");
-  }
- if (__end_mdp == NULL)
-  {
-   if (__pv_err_cnt != 0)
+    if (__in_ifdef_level != 0)
     {
-     rv = 1;
-     goto err_done;
+        __pv_err(924, "last `ifdef unterminated in source stream");
     }
-   __crit_msg("**Design contains no modules - nothing to do.\n");
-   goto set_etime;
-  }
+    if (__end_mdp == NULL)
+    {
+        if (__pv_err_cnt != 0)
+        {
+            rv = 1;
+            goto err_done;
+        }
+        __crit_msg("**Design contains no modules - nothing to do.\n");
+        goto set_etime;
+    }
 
- /* calls to fixup routines here */
- if (__verbose)
-  {
-   __cv_msg("  Begin Elaboration pass 2:\n");
-  }
- /* if verbose off will not print anything */
- mem_use_msg(FALSE); 
+    /* calls to fixup routines here */
+    if (__verbose)
+    {
+        __cv_msg("  Begin Elaboration pass 2:\n");
+    }
+    /* if verbose off will not print anything */
+    mem_use_msg(FALSE); 
 #endif
- /* AIV 03/07/07 - memory usage is now current minus what is was when */
- /* command line arguments read */
- /* AIV 10/30/08 - moved this back to here - memory can be from source */
- /* reading just as good - was not getting exact match from executable */
- /* for some reason */
- __mem_cvc_use = __mem_use - __mem_cvc_use;
+    /* AIV 03/07/07 - memory usage is now current minus what is was when */
+    /* command line arguments read */
+    /* AIV 10/30/08 - moved this back to here - memory can be from source */
+    /* reading just as good - was not getting exact match from executable */
+    /* for some reason */
+    __mem_cvc_use = __mem_use - __mem_cvc_use;
 
- /* SJM 02-27- 09 - pre fix up (pass 2) that are before gen converge loop */
- /* AIV 07/26/10 - now if there is any error return an exit code 1 */
- /* this was 0 for historical reasons from the Antrim days now do exit */
- if (!__pre_fixup_nl()) { rv = 1; goto err_done; }
+    /* SJM 02-27- 09 - pre fix up (pass 2) that are before gen converge loop */
+    /* AIV 07/26/10 - now if there is any error return an exit code 1 */
+    /* this was 0 for historical reasons from the Antrim days now do exit */
+    if (!__pre_fixup_nl()) { rv = 1; goto err_done; }
 
- /* SJM 01-19-09 - if errors occur in preping con funcs, can't copy wrk sp */ 
- if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
+    /* SJM 01-19-09 - if errors occur in preping con funcs, can't copy wrk sp */ 
+    if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
 
- /* 03-03-09 - this becomes fixup nl if no generates in design */
- if (!__fixup_and_gen_nl()) { rv = 1; goto err_done; }
- if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
+    /* 03-03-09 - this becomes fixup nl if no generates in design */
+    if (!__fixup_and_gen_nl()) { rv = 1; goto err_done; }
+    if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
 
- /* this is new post instance tree, param, xmr fixups - expr chking mostly */
- if (!__fixup2_nl()) { rv = 1; goto err_done; }
- if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
+    /* this is new post instance tree, param, xmr fixups - expr chking mostly */
+    if (!__fixup2_nl()) { rv = 1; goto err_done; }
+    if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
 
- if (__decompile) __do_decompile();
+    if (__decompile) __do_decompile();
 
- /* AIV 04/01/11 - if compiled sim and inline for loop option turned on */
- if (__opt_unroll_loops && __compiled_sim) __try_to_fold_for_loops();
+    /* AIV 04/01/11 - if compiled sim and inline for loop option turned on */
+    if (__opt_unroll_loops && __compiled_sim) __try_to_fold_for_loops();
 
- __my_ftime(&__end_comp_time, &__end_comp_mstime);
- if (__numtopm == 0)
-  {
-   __crit_msg("  Unable to begin simulation - no top level modules.\n");   
+    __my_ftime(&__end_comp_time, &__end_comp_mstime);
+    if (__numtopm == 0)
+    {
+        __crit_msg("  Unable to begin simulation - no top level modules.\n");   
 #ifndef __CVC_RT__
 set_etime:
 #endif
-   __my_ftime(&__end_time, &__end_mstime);
-   rv = 1;
-   goto done2;
-  }
+        __my_ftime(&__end_time, &__end_mstime);
+        rv = 1;
+        goto done2;
+    }
 
- /* SJM 02/26/08 - now also need to bld the various IDP for each module */ 
- /* per instance storage areas for each instance of variable storage */
- /* and know at compile time net list elements such as fixed events */
- /* and nchgs */
- __prep_sim();
+    /* SJM 02/26/08 - now also need to bld the various IDP for each module */ 
+    /* per instance storage areas for each instance of variable storage */
+    /* and know at compile time net list elements such as fixed events */
+    /* and nchgs */
+    __prep_sim();
 
 #ifndef __CVC_RT__
- if (__pv_err_cnt == 0)
-  {
-   if (__prt_stats || __prt_allstats)
+    if (__pv_err_cnt == 0)
     {
-     save_quiet = __quiet_msgs;
-     __quiet_msgs = FALSE;
-     prt_alldesmod_tabs();
-     __quiet_msgs = save_quiet;
+        if (__prt_stats || __prt_allstats)
+        {
+            save_quiet = __quiet_msgs;
+            __quiet_msgs = FALSE;
+            prt_alldesmod_tabs();
+            __quiet_msgs = save_quiet;
+        }
+        else if (__verbose)
+        {
+            save_quiet = __quiet_msgs;
+            __quiet_msgs = FALSE;
+            prt_deswide_stats();
+            __quiet_msgs = save_quiet;
+        }
     }
-   else if (__verbose)
-    {
-     save_quiet = __quiet_msgs;
-     __quiet_msgs = FALSE;
-     prt_deswide_stats();
-     __quiet_msgs = save_quiet;
-    }
-  }
 #endif
- if (__compile_only)
-  {
-   __cv_msg("  Translation only run complete.\n");
-   __my_ftime(&__end_time, &__end_mstime);
-   goto done;
-  }
- if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
+    if (__compile_only)
+    {
+        __cv_msg("  Translation only run complete.\n");
+        __my_ftime(&__end_time, &__end_mstime);
+        goto done;
+    }
+    if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
 
 #ifndef __CVC_RT__
- if (__verbose) __cv_msg("  Begin elaborator load/optimize:\n");
+    if (__verbose) __cv_msg("  Begin elaborator load/optimize:\n");
 #else
- if (__verbose) __cv_msg("  Begin compiled design load:\n");
+    if (__verbose) __cv_msg("  Begin compiled design load:\n");
 #endif
 
- __run_state = SS_LOAD;
- __can_exec = FALSE;
+    __run_state = SS_LOAD;
+    __can_exec = FALSE;
 
- /* prepare and compiled dpi c wrapper file and dl open and dl sym link */
- /* the one routine */
- /* AIV 12/30/10 - this is now done for the compiler as well */
- /* when the compiler enters the interpreter needs the interp wrapper */
- if (__dpi_hdrp != NULL)
-  {
-   /* SJM 11-28-10 - only preprocess dpi import/export routines if at */
-   /* least one dpi routine */
-   if (__dpi_hdrp != NULL) __prep_dpi();
-   if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
+    /* prepare and compiled dpi c wrapper file and dl open and dl sym link */
+    /* the one routine */
+    /* AIV 12/30/10 - this is now done for the compiler as well */
+    /* when the compiler enters the interpreter needs the interp wrapper */
+    if (__dpi_hdrp != NULL)
+    {
+        /* SJM 11-28-10 - only preprocess dpi import/export routines if at */
+        /* least one dpi routine */
+        if (__dpi_hdrp != NULL) __prep_dpi();
+        if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
 
-   /* SJM 10-07-10 LOOAKTME??? - for now even if dpi does not link still */
-   /* try to link other PLI - will exit if errors after there */
-  }
+        /* SJM 10-07-10 LOOAKTME??? - for now even if dpi does not link still */
+        /* try to link other PLI - will exit if errors after there */
+    }
 
 #ifdef __CVC_DEBUG__
- /* RELEASE remove -- */
- /* LOOKATME - for now need this even when read source only mode */
- if (__verbose && !__compiled_sim)
-  {
-   struct mod_t *mdp;
-   int32 tot_var_wrds;
-   tot_var_wrds = 0;
-   for (mdp = __modhdr; mdp != NULL; mdp = mdp->mnxt)
+    /* RELEASE remove -- */
+    /* LOOKATME - for now need this even when read source only mode */
+    if (__verbose && !__compiled_sim)
     {
-     if (mdp->mod_idata_siz == 0) continue;
-     tot_var_wrds += mdp->mod_idata_siz;
+        struct mod_t *mdp;
+        int32 tot_var_wrds;
+        tot_var_wrds = 0;
+        for (mdp = __modhdr; mdp != NULL; mdp = mdp->mnxt)
+        {
+            if (mdp->mod_idata_siz == 0) continue;
+            tot_var_wrds += mdp->mod_idata_siz;
+        }
+        __cv_msg( "  Variable storage in bytes: %d.\n", WRDBYTES*tot_var_wrds);
     }
-   __cv_msg( "  Variable storage in bytes: %d.\n", WRDBYTES*tot_var_wrds);
-  }
 #endif
 
- __sfnam_ind = 0;
- __slin_cnt = 0;
- /* final step in loading is calling vpi_ systf checktf routines */ 
- /* can not do until here because d.s. built */ 
- if (__vpi_sysf_hdr != NULL || __vpi_syst_hdr != NULL)
-  {
-   /* compiletf run in reset state because no time and no events */
-   /* AIV 06/22/10 - no reason to handle vpi for compiling of cvcsim */
-   /* only if running compiled executable does this need to be executed */
-   if (!__compiled_sim || __running_cvc_exe)
+    __sfnam_ind = 0;
+    __slin_cnt = 0;
+    /* final step in loading is calling vpi_ systf checktf routines */ 
+    /* can not do until here because d.s. built */ 
+    if (__vpi_sysf_hdr != NULL || __vpi_syst_hdr != NULL)
     {
-     __run_state = SS_RESET;
-     __exec_all_compiletf_routines();
-     __run_state = SS_LOAD;
+        /* compiletf run in reset state because no time and no events */
+        /* AIV 06/22/10 - no reason to handle vpi for compiling of cvcsim */
+        /* only if running compiled executable does this need to be executed */
+        if (!__compiled_sim || __running_cvc_exe)
+        {
+            __run_state = SS_RESET;
+            __exec_all_compiletf_routines();
+            __run_state = SS_LOAD;
+        }
     }
-  }
 
- /* still can use changed params (either type) to elaborate delays */
- /* from params and set delays even where no delay in source here */
- /* 08-07-07 - notice now can't and don't need to xform expressions */
- /* AIV 06/22/10 - no reason to handle vpi for compiling of cvcsim */
- /* only if running compiled executable does this need to be executed */
- if (__have_vpi_actions && (!__compiled_sim || __running_cvc_exe))
-  {
-    __vpi_endcomp_trycall();
-  }
+    /* still can use changed params (either type) to elaborate delays */
+    /* from params and set delays even where no delay in source here */
+    /* 08-07-07 - notice now can't and don't need to xform expressions */
+    /* AIV 06/22/10 - no reason to handle vpi for compiling of cvcsim */
+    /* only if running compiled executable does this need to be executed */
+    if (__have_vpi_actions && (!__compiled_sim || __running_cvc_exe))
+    {
+        __vpi_endcomp_trycall();
+    }
 
- if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
+    if (__pv_err_cnt != 0) { rv = 1; goto err_done; }
 
- /* SJM 01/14/00 - always can free design pnps since (LABEL does not work */
- /*                (error emitted) in $sdf_annotate systask calls */
- /* SJM for sdf do not free - see if works  
- __free_design_pnps();
- -- */
+    /* SJM 01/14/00 - always can free design pnps since (LABEL does not work */
+    /*                (error emitted) in $sdf_annotate systask calls */
+    /* SJM for sdf do not free - see if works  
+       __free_design_pnps();
+       -- */
 
- /* after here, delays elaborated - only vpi change of delays now possible */
- /* but vpi_ change probably not alloed under P1364 */
- /* SJM 01/14/00 - must allow param changes from label during sim */
- /*                for sdf annotate calls - undefined change points */ 
- /*                also can't remove all 0 paths delays may change still */ 
- if (!__has_sdfann_calls)
-  {
-   /* go through disable all 0 delay only paths - never causes error */
-   if (__rm_path_pnd0s) __rem_0path_dels();
-  }
+    /* after here, delays elaborated - only vpi change of delays now possible */
+    /* but vpi_ change probably not alloed under P1364 */
+    /* SJM 01/14/00 - must allow param changes from label during sim */
+    /*                for sdf annotate calls - undefined change points */ 
+    /*                also can't remove all 0 paths delays may change still */ 
+    if (!__has_sdfann_calls)
+    {
+        /* go through disable all 0 delay only paths - never causes error */
+        if (__rm_path_pnd0s) __rem_0path_dels();
+    }
 
- /* but can remove gates and any added all 0 mipds (maybe added again if */
- /* annotate systask used later) so need messages here */ 
+    /* but can remove gates and any added all 0 mipds (maybe added again if */
+    /* annotate systask used later) so need messages here */ 
 #ifndef __CVC_RT__
- if (__num_rem_gate_pnd0s != 0 && __verbose)
-  {
-   __cv_msg(
-    "  %d (%d flat) gate or udp zero delays coded in source removed.\n",
-    __num_rem_gate_pnd0s, __num_flat_rem_gate_pnd0s);
-  }
- if (__num_rem_mipds != 0 && __verbose)
-  {
-   __cv_msg("  %d flattened bits of 0 delay MIPDS removed - no effect.\n",
-    __num_rem_mipds);
-  } 
+    if (__num_rem_gate_pnd0s != 0 && __verbose)
+    {
+        __cv_msg(
+                 "  %d (%d flat) gate or udp zero delays coded in source removed.\n",
+                 __num_rem_gate_pnd0s, __num_flat_rem_gate_pnd0s);
+    }
+    if (__num_rem_mipds != 0 && __verbose)
+    {
+        __cv_msg("  %d flattened bits of 0 delay MIPDS removed - no effect.\n",
+                 __num_rem_mipds);
+    } 
 #endif
 
- /* SJM 08-07-07 - changed name of xform routine since just xform stmts */ 
- __xform_nl_stmts();
+    /* SJM 08-07-07 - changed name of xform routine since just xform stmts */ 
+    __xform_nl_stmts();
 
 #ifdef __XPROP__
- /* for xprop (not xprop2) find eligible xprop stmts and alloc xprop info */
- if (__xprop && !__xprop2)
-  {
-   __prep_xprop_stmts(FALSE);
-  }
-#endif
-
- /* AIV 05/01/07 - if comiled and have sdf try to fold mipd delays */
- if (__compiled_sim && __has_sdfann_calls)
-  {
-   __convert_mipd_val_inumdels_to_const();
-  }
-
- if (__compiled_sim)
-  {
-   long sav_mem_use;
-   time_t start_cgen, start_mscgen, end_cgen, end_mscgen;
-  
-   __my_ftime(&(start_cgen), &(start_mscgen));
-   sav_mem_use =__mem_use;
-#ifndef __CVC_RT__
-   if (__verbose) __cv_msg("  Begin CVC code generation:\n");
-#endif
-
-   if (!__running_cvc_exe)
+    /* for xprop (not xprop2) find eligible xprop stmts and alloc xprop info */
+    if (__xprop && !__xprop2)
     {
-     /* AIV 02/03/09 - special directive to make runtime CVC binary */
-     /* do not link in __cvc_driver to do code generation */
-#ifndef __CVC_RT__
-     if (!__cvc_driver())
-      {
-       __cv_msg(
-        "  CVC assembly code generation failed - unable to continue.\n");
-       __my_ftime(&__end_time, &__end_mstime);
-       goto done;
-      }
+        __prep_xprop_stmts(FALSE);
+    }
 #endif
-     }
-    else running_bin_setup();
-   __my_ftime(&(end_cgen), &(end_mscgen));
-   if (!__running_cvc_exe)
-    {
-     if (__verbose)
-      {
-#ifdef __CVC_DEBUG__
-       double d1;
 
-       if (__mem_use - sav_mem_use > 0)
+    /* AIV 05/01/07 - if comiled and have sdf try to fold mipd delays */
+    if (__compiled_sim && __has_sdfann_calls)
+    {
+        __convert_mipd_val_inumdels_to_const();
+    }
+
+    if (__compiled_sim)
+    {
+        long sav_mem_use;
+        time_t start_cgen, start_mscgen, end_cgen, end_mscgen;
+
+        __my_ftime(&(start_cgen), &(start_mscgen));
+        sav_mem_use =__mem_use;
+#ifndef __CVC_RT__
+        if (__verbose) __cv_msg("  Begin CVC code generation:\n");
+#endif
+
+        if (!__running_cvc_exe)
         {
-         d1 = 100.0*((double) __mem_use - sav_mem_use)/((double) sav_mem_use);
-         __cv_msg("  Memory unfreed by CVC %ld bytes (%.2lf%% more)\n", 
-          __mem_use - sav_mem_use, d1);
-        }
+            /* AIV 02/03/09 - special directive to make runtime CVC binary */
+            /* do not link in __cvc_driver to do code generation */
+#ifndef __CVC_RT__
+            if (!__cvc_driver())
+            {
+                __cv_msg(
+                         "  CVC assembly code generation failed - unable to continue.\n");
+                __my_ftime(&__end_time, &__end_mstime);
+                goto done;
+            }
 #endif
-       __my_ftime(&end_cgen, &end_mscgen);
-       timd1 = (double) (end_cgen - start_cgen)
-        + ((double) (end_mscgen - start_mscgen))/1000.0;
-       __cv_msg("  CVC compilation %.1lf seconds elapsed.\n", timd1);
+        }
+        else running_bin_setup();
+        __my_ftime(&(end_cgen), &(end_mscgen));
+        if (!__running_cvc_exe)
+        {
+            if (__verbose)
+            {
+#ifdef __CVC_DEBUG__
+                double d1;
+
+                if (__mem_use - sav_mem_use > 0)
+                {
+                    d1 = 100.0*((double) __mem_use - sav_mem_use)/((double) sav_mem_use);
+                    __cv_msg("  Memory unfreed by CVC %ld bytes (%.2lf%% more)\n", 
+                             __mem_use - sav_mem_use, d1);
+                }
+#endif
+                __my_ftime(&end_cgen, &end_mscgen);
+                timd1 = (double) (end_cgen - start_cgen)
+                    + ((double) (end_mscgen - start_mscgen))/1000.0;
+                __cv_msg("  CVC compilation %.1lf seconds elapsed.\n", timd1);
 
 #ifdef __CVC_DEBUG__
-       /* AIV 11/02/07 - print the insn info for devel */
-       __cv_msg(
-       "  CVC total instructions %d spilled %d coalesced %d wide spilled %d printed insn %d.\n", 
-       __insn_count, __spill_nonw_count, __coalesce_count, __spill_count, __insn_print_count);
+                /* AIV 11/02/07 - print the insn info for devel */
+                __cv_msg(
+                         "  CVC total instructions %d spilled %d coalesced %d wide spilled %d printed insn %d.\n", 
+                         __insn_count, __spill_nonw_count, __coalesce_count, __spill_count, __insn_print_count);
 #endif
-      }
-     else
-      {
-       /* AIV 12/21/07 - always print the total compilation time */
-       /* users think that the compilation time is part of the runtime */
-       /* notice this is printf to prevent dumping to log file */
-       if (!__quiet_msgs)
-        {
-         __my_ftime(&end_cgen, &end_mscgen);
-          timd1 = (double) (end_cgen - start_cgen)
-            + ((double) (end_mscgen - start_mscgen))/1000.0;
-         printf("\n  CVC compilation %.1lf seconds elapsed.\n", timd1);
+            }
+            else
+            {
+                /* AIV 12/21/07 - always print the total compilation time */
+                /* users think that the compilation time is part of the runtime */
+                /* notice this is printf to prevent dumping to log file */
+                if (!__quiet_msgs)
+                {
+                    __my_ftime(&end_cgen, &end_mscgen);
+                    timd1 = (double) (end_cgen - start_cgen)
+                        + ((double) (end_mscgen - start_mscgen))/1000.0;
+                    printf("\n  CVC compilation %.1lf seconds elapsed.\n", timd1);
+                }
+            }
         }
-      }
     }
-  }
- /* if compile only print message and go to done */
+    /* if compile only print message and go to done */
 #ifndef __CVC_RT__
- if (__compiled_sim)
-  { 
-   /* if DPI import/exports C code may not have linked properly */
-   /* due to naming/linking issues caused by user code */
-   if (__dpi_hdrp != NULL)
-    {
-     if (stat(__exe_name, &st) != 0)
-      {
-       __pv_ferr(4836, "EXECUTABLE %s failed to link - probably due to inconsistent naming of DPI functions", __exe_name);
-      }
+    if (__compiled_sim)
+    { 
+        /* if DPI import/exports C code may not have linked properly */
+        /* due to naming/linking issues caused by user code */
+        if (__dpi_hdrp != NULL)
+        {
+            if (stat(__exe_name, &st) != 0)
+            {
+                __pv_ferr(4836, "EXECUTABLE %s failed to link - probably due to inconsistent naming of DPI functions", __exe_name);
+            }
+        }
+        else
+        {
+            __cv_msg("\n  EXECUTABLE SAVED TO '%s'.\n\n", __exe_name); 
+        }
+        __my_ftime(&__end_time, &__end_mstime);
+        goto done;
     }
-   else
-    {
-     __cv_msg("\n  EXECUTABLE SAVED TO '%s'.\n\n", __exe_name); 
-    }
-   __my_ftime(&__end_time, &__end_mstime);
-   goto done;
-  }
 #endif
 
- /* now that all storage allocated and given some val, call checktf */
- /* routines, these can call anything not sim queue depended but shouldn't */
- if (__tfrec_hdr != NULL)
-  {
-   __run_state = SS_RESET;
-   __call_all_checktfs();
-   __run_state = SS_LOAD;
-  }
+    /* now that all storage allocated and given some val, call checktf */
+    /* routines, these can call anything not sim queue depended but shouldn't */
+    if (__tfrec_hdr != NULL)
+    {
+        __run_state = SS_RESET;
+        __call_all_checktfs();
+        __run_state = SS_LOAD;
+    }
 
- /* SJM 05/04/05 - now can only initialize dce previous values */
- __initialize_dsgn_dces();
+    /* SJM 05/04/05 - now can only initialize dce previous values */
+    __initialize_dsgn_dces();
 
- __init_sim();
- __my_ftime(&__end_prep_time, &__end_prep_mstime);
+    __init_sim();
+    __my_ftime(&__end_prep_time, &__end_prep_mstime);
 
- if (__verbose) __cv_msg("  Begin simulation:\n");
- if (__verbose) __cv_msg("\n");
+    if (__verbose) __cv_msg("  Begin simulation:\n");
+    if (__verbose) __cv_msg("\n");
 
- /* on setup returns 0, on lng jmp returns 1, but always just exec sim */
- /* since restart */
- /* on set returns 0, do not run re-init code */
- if (setjmp(__reset_jmpbuf) != 0)
-  {
-   if (__tfrec_hdr != NULL) __call_misctfs_streset();
-   if (__have_vpi_actions) __vpi_startreset_trycall();
-   __now_resetting = TRUE;
-   __run_state = SS_RESET;
-   /* change to sim run state in here */
-   __reset_to_time0();
-   /* by here state back to SIM */
-  }
+    /* on setup returns 0, on lng jmp returns 1, but always just exec sim */
+    /* since restart */
+    /* on set returns 0, do not run re-init code */
+    if (setjmp(__reset_jmpbuf) != 0)
+    {
+        if (__tfrec_hdr != NULL) __call_misctfs_streset();
+        if (__have_vpi_actions) __vpi_startreset_trycall();
+        __now_resetting = TRUE;
+        __run_state = SS_RESET;
+        /* change to sim run state in here */
+        __reset_to_time0();
+        /* by here state back to SIM */
+    }
 
 #ifdef __XPROP__
- /* if xprop and compiled sim remove dummy non-blocking task modules */
- if (__xprop && __compiled_sim)
-  {
-   struct mod_t *mdp;
-
-   for (mdp = __modhdr; mdp != NULL; mdp = mdp->mnxt)
+    /* if xprop and compiled sim remove dummy non-blocking task modules */
+    if (__xprop && __compiled_sim)
     {
-     /* DBG remove -- */
-     if (mdp->xprop_nb_taskp == NULL) __misc_terr(__FILE__, __LINE__);
-     /* --- */
-     /* just point to the first real task */
-     mdp->mtasks = mdp->mtasks->tsknxt;
+        struct mod_t *mdp;
+
+        for (mdp = __modhdr; mdp != NULL; mdp = mdp->mnxt)
+        {
+            /* DBG remove -- */
+            if (mdp->xprop_nb_taskp == NULL) __misc_terr(__FILE__, __LINE__);
+            /* --- */
+            /* just point to the first real task */
+            mdp->mtasks = mdp->mtasks->tsknxt;
+        }
     }
-  }
 #endif
 
- __pv_sim();
+    __pv_sim();
 
  /* LOOKATME - think also call end sim cb here but LRM says $finish */
  if (__have_vpi_actions) __vpi_endsim_trycall();
@@ -4242,1559 +4242,1559 @@ done:;
  */
 static void do_args(void )
 {
- struct optlst_t *olp, *olp2; 
- int32 oi, tmp, len, level;
- FILE *f;
- struct optlst_t *sav_olp;
- struct loadpli_t *ldp;
- struct mapfiles_t *mapfp;
- struct sv_lib_t *svlp;
- struct ocfil_lst_t *ocfnlp;
- struct tgldat_in_lst_t *tgldat_ifp;
- struct stat st;
- char *chp, *chp2, *chp3;
- char s1[2*RECLEN];
+    struct optlst_t *olp, *olp2; 
+    int32 oi, tmp, len, level;
+    FILE *f;
+    struct optlst_t *sav_olp;
+    struct loadpli_t *ldp;
+    struct mapfiles_t *mapfp;
+    struct sv_lib_t *svlp;
+    struct ocfil_lst_t *ocfnlp;
+    struct tgldat_in_lst_t *tgldat_ifp;
+    struct stat st;
+    char *chp, *chp2, *chp3;
+    char s1[2*RECLEN];
 
- /* notice for options with arguments must mark arg as -2 or will be */
- /* seen as input file */ 
- for (olp = __opt_hdr; olp != NULL;)
-  {
-   /* ignore markers added for building vpi argc/argv */
-   if (olp->is_bmark || olp->is_emark)
-    { olp = olp->optlnxt; continue; }
-
-   chp = olp->opt;
-   /* no + or -, ignore for now - next pass add to file list */
-   if (*chp != '-' && *chp != '+') { olp = olp->optlnxt; continue; }
-
-   /* unrecognized +/-, if -, warning, else inform */ 
-   if (olp->optnum == -1)
+    /* notice for options with arguments must mark arg as -2 or will be */
+    /* seen as input file */ 
+    for (olp = __opt_hdr; olp != NULL;)
     {
-     if (strlen(chp) == 1)
-      {
-       __gfwarn(506, olp->optfnam_ind, olp->optlin_cnt,
-        "%s option prefix without following option name illegal - ignored",
-         chp);
-       olp = olp->optlnxt;
-       continue;
-      } 
+        /* ignore markers added for building vpi argc/argv */
+        if (olp->is_bmark || olp->is_emark)
+        { olp = olp->optlnxt; continue; }
 
-     if (*chp == '-')
-      __gfwarn(506, olp->optfnam_ind, olp->optlin_cnt,
-       "unrecogized option %s - ignored ", olp->opt);
-     else __gfinform(410, olp->optfnam_ind, olp->optlin_cnt,
-      "assuming unrecognized option %s for pli or other simulator",
-      olp->opt);
-     
-     olp = olp->optlnxt;
-     continue;
-    }
-   oi = olp->optnum;
-   switch (oi) {
-    /* ignore already processed */
-    case CO_LOG: case CO_HELP: case CO_QUIET: case CO_VERB: break;
-    case CO_VERB_MEM: break;
+        chp = olp->opt;
+        /* no + or -, ignore for now - next pass add to file list */
+        if (*chp != '-' && *chp != '+') { olp = olp->optlnxt; continue; }
 
-    /* if was not able to open nest file error here */
-    case CO_F: 
-     /* if -f option expanded - will be removed before here */
-     /* left only if error (cannot open file) */
-     if (olp->optlnxt == NULL)
-      {
-       __gferr(920, olp->optfnam_ind, olp->optlin_cnt,
-        "-f include argument not followed by file name");
-       continue;
-      }
-     olp = olp->optlnxt; 
-     /* -f not followed by file name in nested -f file */
-     if (olp->is_emark)
-      {
-       /* here may have long list of emarks that must be skipped */
-       __gferr(920, olp->optfnam_ind, olp->optlin_cnt,
-        "nested -f include argument not followed by file name");
-       break;
-      }
-     __gferr(920, olp->optfnam_ind, olp->optlin_cnt,
-      "cannot open -f include argument file %s", olp->opt);
-     olp->optnum = -2;
-     break;
-
-    /* options followed by 1 white space separated argument */
-    case CO_IAINPUT:
-     sav_olp = olp;
-     olp = olp->optlnxt; 
-     if (olp != NULL) chp = olp->opt;
-     if (olp == NULL || olp->is_emark || chp == NULL || *chp == '+'
-      || *chp == '-')
-      {
-       __gfwarn(505, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
-        "-i option not followed by startup interactive input file name"); 
-       continue;
-      }
-     olp->optnum = -2;
-     /* make sure it can be opened */
-     if ((f = __tilde_fopen(chp, "r")) == NULL)
-      {
-       __gfwarn(505, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
-        "cannot open -i startup interactive input file %s - input from stdin",
-        chp);
-       break;
-      }
-     __my_fclose(f);
-     __cmd_start_fnam = __pv_stralloc(chp);
-     if (__verbose)
-      {
-       __cv_msg("  Startup interactive input will be read from file \"%s\".\n",
-        __cmd_start_fnam);
-      }
-     /* SJM 04-02-09 - for interpreter/debugger only options, if have not */
-     if (__compiled_sim || __no_iact)
-      {
-       __gfwarn(642, olp->optfnam_ind, olp->optlin_cnt,
-        "interpreter only option %s before +interp option  - will be ignored for compiled sim",
-        sav_olp->opt);
-      }
-     break; 
-    case CO_KEY:
-     sav_olp = olp;
-     olp = olp->optlnxt; 
-     if (olp != NULL) chp = olp->opt;
-     if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
-      {
-       __gfwarn(505, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
-        "-k option not followed by file name for transcript of typed keys");
-       continue; 
-      }  
-     olp->optnum = -2;
-     __gfwarn(621, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
-      "-k option no effect - key files not supported (use $input scripts)");
-     /* only open if needed (must go in malloc as separate) */
-     break;
-    case CO_TRACEFILE:
-     sav_olp = olp;
-     olp = olp->optlnxt; 
-     if (olp != NULL) chp = olp->opt;
-     if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
-      {
-       __gfwarn(509, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
-       "+tracefile option not followed by file name - previous (stdout?) used");
-       continue; 
-      }  
-     olp->optnum = -2;
-     /* only open when tracing enabled */
-     if (strcmp(chp, "STDOUT") == 0) strcpy(chp, "stdout"); 
-     if (__tr_fnam != NULL) __my_free(__tr_fnam, strlen(__tr_fnam) + 1);
-     __tr_fnam = __pv_stralloc(chp);
-     __tr_s = NULL;
-     if (__verbose)
-      __cv_msg(
-       "  Statement and/or event trace output will be written to file \"%s\".\n",
-       __tr_fnam);
-      /* in case -t or -et precedes this option open now */
-     if (__st_tracing || __ev_tracing || __pth_tracing) __maybe_open_trfile();
-     break;
-    case CO_SDF_LOG:
-     sav_olp = olp;
-     olp = olp->optlnxt; 
-     if (olp != NULL) chp = olp->opt;
-     if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
-      {
-       __gfwarn(505, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
-        "+sdf_log_file setting option not followed by file name");
-       continue; 
-      }  
-     olp->optnum = -2;
-     if (__sdf_opt_log_fnam != NULL)
-      __my_free(__sdf_opt_log_fnam, strlen(__sdf_opt_log_fnam) + 1);
-     __sdf_opt_log_fnam = __pv_stralloc(chp);
-
-     if (__verbose)
-      {
-       __cv_msg(
-        "  SDF messages and errors will be written to separate SDF log file %s.\n",
-        __sdf_opt_log_fnam);
-      }
-     break;
-    case CO_SDFANNOTATE:
-     sav_olp = olp;
-     olp = olp->optlnxt; 
-     if (olp != NULL) chp = olp->opt;
-     if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
-      {
-       __gfwarn(593, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
-        "+sdf_annotate option not followed by [file][+<optional scope name>] - ignored");
-       continue;
-      }
-     olp->optnum = -2;
-     do_sdflocdef(chp, __in_fils[sav_olp->optfnam_ind], sav_olp->optlin_cnt);
-     break;
-    case CO_MAXERRS:
-     sav_olp = olp;
-     olp = olp->optlnxt; 
-     if (olp != NULL) chp = olp->opt;
-     if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
-      {
-bad_maxerrs:
-       __gfwarn(502, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
-        "maximum error number must be 0 (no limit) or positive");
-       continue;
-      }
-     olp->optnum = -2;
-     if (sscanf(chp, "%d", &tmp) != 1 || tmp < 0) goto bad_maxerrs;
-     __max_errors = tmp; 
-     if (__max_errors != 0 && __verbose)
-      __cv_msg(
-       "  Translation will stop after %d errors instead of default %d.\n",
-       __max_errors, MAX_ERRORS); 
-     else
-      {
-       if (__verbose)
-        __cv_msg("  Default error termination limit disabled.\n");
-      }
-     break;
-    case CO_V:
-     sav_olp = olp;
-     olp = olp->optlnxt; 
-     if (olp != NULL) chp = olp->opt;
-     if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
-      {
-       __gfwarn(501, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
-        "-v library file option not followed by file name - ignored");
-       continue;
-      }
-     olp->optnum = -2;
-     if (strcmp(chp, ".") == 0 || strcmp(chp, "..") == 0)
-      {
-       __gfwarn(623, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
-        "-v library file %s illegal", chp);
-      }
-     add_lbfil(chp, 'v');
-#ifndef __CVC_RT__
-     /* AIV 11/14/09 - don't need to see this at compiled rt */
-     if (__verbose)
-      __cv_msg("  File \"%s\" in library from -v option.\n", chp); 
-#endif
-     break;
-    case CO_LIBLIST:
-     /* -L library */
-     sav_olp = olp;
-     olp = olp->optlnxt; 
-     if (olp != NULL) chp = olp->opt;
-     if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
-      {
-       __gfwarn(501, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
-        "-L library map file option not followed by file name - ignored");
-       continue;
-      }
-     olp->optnum = -2;
-     /* set the global name of the -L library name */
-     __cmdl_library = __pv_stralloc(chp);
-#ifndef __CVC_RT__
-     if (__verbose)
-      __cv_msg("  File \"%s\" in library from -L option.\n", chp); 
-#endif
-     break;
-    case CO_LIBMAP:
-     /* +config [filename] */
-     sav_olp = olp;
-     olp = olp->optlnxt; 
-     if (olp != NULL) chp = olp->opt;
-     if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
-      {
-       __gfwarn(501, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
-        "+config [file] library map file option not followed by file name - ignored");
-       continue;
-      }
-     olp->optnum = -2;
-
-     mapfp = (struct mapfiles_t *) __my_malloc(sizeof(struct mapfiles_t));
-     mapfp->mapfnam = __pv_stralloc(chp);
-     mapfp->mapfnxt = NULL;
-
-     if (__map_files_hd == NULL) __map_files_hd = __map_files_tail = mapfp;
-     else
-      {
-       __map_files_tail->mapfnxt = mapfp;
-       __map_files_tail = mapfp;
-      }
-#ifndef __CVC_RT__
-     if (__verbose)
-      __cv_msg(
-       "  Will read \"%s\" map lib file specified by +config [file] option.\n",
-       mapfp->mapfnam); 
-#endif
-     break;
-    case CO_FRSPICE:
-     break;
-    case CO_Y:
-     sav_olp = olp;
-     olp = olp->optlnxt; 
-     if (olp != NULL) chp = olp->opt;
-     if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
-      {
-       __gfwarn(593, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
-        "-y library directory option not followed by path name - ignored");
-       continue;
-      }
-     olp->optnum = -2;
-     add_lbfil(chp, 'y');
-#ifndef __CVC_RT__
-     if (__verbose)
-      __cv_msg("  Directory \"%s\" searched for libraries from -y option.\n",
-      olp->opt); 
-#endif
-     break;
-    case CO_DEFINE:
-     chp = olp->opt;
-     do_cmdmacdef(&(chp[8]), olp);
-     break;
-    case CO_INCDIR:
-     chp2 = olp->opt;
-     /* error message on bad format emitted inside here */
-     if (!bld_incdtab(&(chp2[8]), olp)) break;
-#ifndef __CVC_RT__
-     if (__verbose)
-      {
-       __cv_msg(
-        "  %s additional +incdir+ paths searched to find `include files.\n",
-        &(olp->opt[7])); 
-      }
-#endif
-     break;
-    case CO_LOADPLI1:
-#ifdef __STATIC_PLI__
-    __gfwarn(3123, olp->optfnam_ind, olp->optlin_cnt,
-     "+loadpli1 = option illegal when using old style statically linked cverobj.o - ignored");
-#else
-     chp2 = olp->opt;
-     if ((ldp = bld_loadpli_lbs(&(chp2[10]), olp, TRUE)) == NULL) break;
-     if (__verbose)
-      {
-       /* this can't fail since know well formed */
-       chp3 = strrchr(chp2, ':');
-       /* DBG LINT remove -- */
-       if (chp3 == NULL) __misc_terr(__FILE__, __LINE__);
-       /* -- */
-       if (strcmp(chp3, "") == 0) strcpy(__xs, "[none]");
-       else strcpy(__xs, chp3);
-       __cv_msg(
-        "  +loadpli1 dynamic library %s loaded with bootstrap routine(s) %s\n",
-        ldp->libnam, __xs);
-      }
-#endif
-     break;
-    case CO_LOADVPI:
-#ifdef __STATIC_PLI__
-    __gfwarn(3123, olp->optfnam_ind, olp->optlin_cnt,
-     "+loadvpi= option illegal when using old style statically linked cverobj.o - ignored");
-#else
-     chp2 = olp->opt;
-     if ((ldp = bld_loadpli_lbs(&(chp2[9]), olp, FALSE)) == NULL) break;
-     if (__verbose)
-      {
-       /* this can't fail since know well formed */
-       chp3 = strrchr(chp2, ':');
-       /* DBG LINT remove -- */
-       if (chp3 == NULL) __misc_terr(__FILE__, __LINE__);
-       /* -- */
-       if (strcmp(chp3, "") == 0) strcpy(__xs, "[none]");
-       else strcpy(__xs, chp3);
-       __cv_msg(
-        "  +loadvpi= dynamic library %s loaded with bootstrap routine(s) %s\n",
-        ldp->libnam, __xs);
-      }
-#endif
-     break;
- 
-    case CO_DPI_WR_HDRS:
-     __wr_dpi_c_hdrs = TRUE;
-     if (__verbose)
-      {
-       __cv_msg(
-        "  Writing DPI C routine header prototypes to file dpi_hdrs.h\n");
-      }
-     break;
-    case CO_DPI_SVLIB:
-     /* if users is using -sv_lib assume SV parsing */
-     __sv_parse = TRUE;
-     sav_olp = olp;
-     olp = olp->optlnxt; 
-     if (olp != NULL) chp = olp->opt;
-     if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
-      {
-       __gfwarn(4302, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
-        "+sv_lib option not followed by required [path] - ignored");
-       continue;
-      }
-     olp->optnum = -2;
-     svlp = (struct sv_lib_t *) __my_malloc(sizeof(struct sv_lib_t));
-     /* SJM 02-12-13 - bug was assuming paths are relative */
-     if (*chp == '/')
-      {
-       __gfwarn(4311, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
-        "-sv_lib option library path name %s is absolute - not portable but still used",
-        chp);
-       strcpy(s1, chp);
-      }
-     else if (strncmp(chp, "./", 2) == 0)
-      {
-       /* SJM 02-12-13 - if the ./ already there, do not add */
-      strcpy(s1, chp);
-      }
-     else
-      {
-       /* SJM 02-12-13 - add the "./" - this makes simple leave -sv lib .so */
-       /* in dircvc runs in works (handles most common relative paths too) */
-       strcpy(s1, "./");
-       strcat(s1, chp);
-      }
-     if (stat(s1, &st) != 0)
-      {
-       __gfwarn(4303, olp->optfnam_ind, olp->optlin_cnt,
-        "-sv_lib library file %s - cannot be opened or does not exist", chp);
-      }
-     svlp->does_not_exist = FALSE;
-     svlp->path = __pv_stralloc(s1);
-     svlp->svnxt = NULL;
-     if (__sv_lib_hdrp == NULL) __sv_lib_hdrp = __sv_lib_endp = svlp;
-     else
-      {
-       __sv_lib_endp->svnxt = svlp;
-       __sv_lib_endp = svlp;
-      }
-     if (__verbose)
-      {
-       __cv_msg("  Linking in DPI library \"%s\".\n", chp);
-      }
-     break;
-    case CO_SV_PARSE:
-    case CO_SV_PARSE2:
-     __sv_parse = TRUE;
-     if (__verbose)
-      __cv_msg("  Will parse source with System Verilog keywords allowed.\n");
-     break;
-    case CO_OPTCFGFIL:
-     sav_olp = olp;
-     olp = olp->optlnxt; 
-     if (olp != NULL) chp = olp->opt;
-     if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
-      {
-       __gfwarn(4305, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
-        "-optconfigfile file name missing");
-        continue;
-      }
-     /* mark not input file */
-     olp->optnum = -2;
-     if (stat(chp, &st) != 0)
-      {
-       __gfwarn(4306, olp->optfnam_ind, olp->optlin_cnt,
-        "-optconfigfile file %s - can not be opened", chp);
-      }
-     ocfnlp = (struct ocfil_lst_t *)__my_malloc(sizeof(struct ocfil_lst_t));
-     ocfnlp->ocfnam = __pv_stralloc(olp->opt);
-     ocfnlp->oc_stmts = NULL;
-     ocfnlp->oclnxt = NULL;
-     /* SJM 12-11-10 - file order must be preserved */ 
-     if (__last_optcfg_fil == NULL) __optcfg_fils = __last_optcfg_fil = ocfnlp; 
-     else
-      {
-       ocfnlp->oclnxt = __last_optcfg_fil;
-       __last_optcfg_fil = ocfnlp;
-      }
-     if (__verbose) 
-      {
-       /* SJM 12-17-10 - need to print actual opt config fil name */
-       __cv_msg(
-        "  Adding -optconfigfile %s containing config attributes.\n",
-        ocfnlp->ocfnam);
-      }
-     break;
-    case CO_TOGGLE:
-     if (__verbose) __cv_msg("  Toggle coverage report on.\n");
-     __toggle_coverage = TRUE;
-     break;
-    case CO_TOGGLE_FILE:
-     olp2 = olp;
-     olp = olp->optlnxt;
-     if (olp == NULL)
-      {
-       /* AIV 08/17/11 - need to use olp2 not next arg */
-       __gferr(920, olp2->optfnam_ind, olp2->optlin_cnt,
-        "-toggle_file not followed by file name");
-        continue;
-      }
-     olp->optnum = -2;
-     __toggle_coverage_file_name = __pv_stralloc(olp->opt);
-     if (__verbose) 
-      {
-       __cv_msg("  Toggle coverage report on writing to file %s.\n",
-        __toggle_coverage_file_name);
-      }
-     /* SJM 04-26-13 - now when setting toggle file - do not turn on toggle */
-     /* coverage - do not know yet - may be turned on in optcfg file */
-     break;
-    case CO_TOGGLE_REPORT_INSTANCE:
-     if (__verbose) __cv_msg("  Toggle reporting per instance.\n");
-     __old_toggle_rpt_instance = TRUE;
-     break;
-    case CO_DRVN_CONST_AS_TGL:
-//SJM 11-03-12 - LOOKATME? - think this should be default
-     if (__verbose)
-      {
-       __cv_msg(
-        "  Wires driven by constants will not appear in untoggled report.\n");
-      } 
-     __drvn_const_as_tgled = TRUE;
-     break;
-    case CO_DRVN_CONST_RPT_CONCISE:
-     if (__verbose)
-      { 
-       __cv_msg(
-        "  New concise format report lists wire bits driven by constants.\n");
-      }
-     __drvn_const_rpt_concise = TRUE;
-     break;
-    case CO_UNTGL_RPT_CONCISE:
-     if (__verbose)
-      { 
-       __cv_msg(
-        "  New concise untoggled only report - ignores non concise report options.\n");
-      }
-     __untgled_rpt_concise = TRUE;
-     break;
-// SJM 04-18-13 - START OF NEW TGLDAT OPTIONS
-    case CO_WRITE_TGLDAT:
-     /* this will write to the toggle.tgldat file unless explicit opt used */
-     __wr_tgldat_on = TRUE;
-     if (__verbose)
-      { 
-       __cv_msg(
-        "  Toggle coverage results for this run written to default verilog.tgldat file.\n");
-      }
-     break;
-    case CO_WRITE_TGLDAT_FILE:
-     /* AIV 08/17/11 - need to use olp2 not next arg */
-     olp2 = olp;
-     olp = olp->optlnxt;
-     if (olp == NULL)
-      {
-       __gferr(920, olp2->optfnam_ind, olp2->optlin_cnt,
-        "-write_toggle_data_file option not followed by file name");
-        continue;
-      }
-     olp->optnum = -2;
-     __wr_tgldat_file = __pv_stralloc(olp->opt);
-     if (__verbose) 
-      {
-       __cv_msg(
-        "  Toggle coverage results for this run written to .tgldat file %s.\n",
-        __wr_tgldat_file);
-      }
-     /* must turn on too */  
-     __wr_tgldat_on = TRUE;
-     break;
-    case CO_SET_TGLED_FROM_FILE:
-     olp2 = olp;
-     olp = olp->optlnxt;
-     if (olp != NULL) chp = olp->opt;
-     if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
-      {
-       __gferr(920, olp2->optfnam_ind, olp2->optlin_cnt,
-        "-set_toggled_from_file option not followed by .tgldat file name");
-        continue;
-      }
-     olp->optnum = -2;
-     if (stat(chp, &st) != 0)
-      {
-       __gfwarn(4301, olp->optfnam_ind, olp->optlin_cnt,
-        "-set_togled_from_file .tgldat file %s - can not be opened", chp);
-      }
-
-     /* build the .tgldat input file name record */
-     tgldat_ifp = (struct tgldat_in_lst_t *)
-      __my_malloc(sizeof(struct tgldat_in_lst_t));
-     tgldat_ifp->in_tgldat_fnam = __pv_stralloc(olp->opt);
-     tgldat_ifp->tgldat_in_nxt = NULL;
-     if (__tgldat_infils_lst_hd == NULL)
-      { 
-        __tgldat_infils_lst_hd = __tgldat_infils_lst_end = tgldat_ifp;
-      }
-     else __tgldat_infils_lst_end->tgldat_in_nxt = tgldat_ifp;
-     if (__verbose) 
-      {
-       __cv_msg(
-        "  .tgldat file %s read and used to set toggled bits from previous run.\n",
-        tgldat_ifp->in_tgldat_fnam);
-      }
-     break;
-    case CO_TGLVERBOSE:
-     if (__verbose)
-      {
-       __cv_msg(
-        "  .tgldat file reading mis-match verbose warnings will be printed.\n");
-      }
-     __tgl_verbose = TRUE;
-     break;
-    case CO_TOGGLE_REPORT_BITS:
-     if (__verbose) __cv_msg("  Old style toggle reporting per bits.\n");
-     __old_toggle_rpt_bits = TRUE;
-     break;
-    case CO_TOGGLE_UNCOVERED:
-     if (__verbose) __cv_msg("  Old style toggle reporting uncovered bits.\n");
-     __old_toggle_rpt_uncovered = TRUE;
-     break;
-    case CO_TOGGLE_COVERED:
-     if (__verbose) __cv_msg("  Old style toggle reporting covered bits.\n");
-     __old_toggle_rpt_covered = TRUE;
-     break;
-    case CO_EVENT_COVERAGE:
-     if (__verbose) __cv_msg("  Event coverage reporting on.\n");
-     __event_coverage = TRUE;
-     break;
-    case CO_EVENT_COVERAGE_FILE:
-     if (__verbose) __cv_msg("  Event coverage reporting on.\n");
-     __event_coverage = TRUE;
-     olp2 = olp;
-     olp = olp->optlnxt;
-     if (olp == NULL)
-      {
-       /* AIV 08/17/11 - need to use olp2 not next arg */
-       __gferr(920, olp2->optfnam_ind, olp2->optlin_cnt,
-        "-event_coverage_file not followed by file name");
-        continue;
-      }
-     olp->optnum = -2;
-     __event_coverage_file_name = __pv_stralloc(olp->opt);
-     if (__verbose) 
-      {
-       __cv_msg("  Event coverage report on writing to file %s.\n",
-        __event_coverage_file_name);
-      }
-     break;
-    case CO_STMT_COVERAGE:
-     if (__verbose) __cv_msg("  Statement coverage reporting on.\n");
-     __stmt_coverage = TRUE;
-     break;
-    case CO_STMT_TASKS_COVERAGE:
-     if (__verbose) __cv_msg("  Statement coverage for tasks reporting on.\n");
-     __stmt_coverage = TRUE;
-     __stmt_coverage_tasks = TRUE;
-     break;
-    case CO_STMT_COVERAGE_FILE:
-     if (__verbose) __cv_msg("  Statement coverage reporting on.\n");
-     __stmt_coverage = TRUE;
-     olp2 = olp;
-     olp = olp->optlnxt;
-     if (olp == NULL)
-      {
-       /* AIV 08/17/11 - need to use olp2 not next arg */
-       __gferr(920, olp2->optfnam_ind, olp2->optlin_cnt,
-        "-stmt_coverage_file not followed by file name");
-        continue;
-      }
-     olp->optnum = -2;
-     __stmt_coverage_file_name = __pv_stralloc(olp->opt);
-     if (__verbose) 
-      {
-       __cv_msg(" Statement coverage report on writing to file %s.\n",
-        __stmt_coverage_file_name);
-      }
-     break;
-    case CO_OVERRIDE_CHANGE:
-     /* SJM 04-18-13 - option for internal debug - lets exec not match src */ 
-     __override_change = TRUE;
-     if (__verbose)
-      {
-       __cv_msg("  Overriding model change check\n");
-      }
-     break;
-    case CO_SAME_PARAM_MUST_SPLIT:
-     __same_param_must_split = TRUE;
-     if (__verbose)
-      {
-       __cv_msg(
-        "  turn off optimization that merges split same param types.\n");
-      }
-     break;
-    case CO_RANDOM:
-     __random_init = TRUE;
-     if (__verbose) __cv_msg("  Random initialization turned on.\n");
-     break;
-    case CO_RANDOM_2STATE:
-     /* must turn on both flags */
-     __random_init = TRUE;
-     __random_init_2state = TRUE;
-     if (__verbose) __cv_msg("  Random 2-state initialization turned on.\n");
-     break;
-    case CO_RANDOM_SEED:
-    case CO_RANDOM_2STATE_SEED:
-     /* +xtracemax=10 - set the new max value */
-     chp2 = strchr(olp->opt, '=');
-     /* DBG remove -- */
-     if (chp2 == NULL) __misc_terr(__FILE__, __LINE__);
-     /* ---- */
-     chp2++;
-     __init_seed = atoi(chp2);   
-     __random_init = TRUE;
-     if (oi == CO_RANDOM_SEED)
-      {
-        if (__verbose) 
-         {
-          __cv_msg("  Random initialization turned on with seed=%d.\n", 
-            __init_seed);
-         }
-      }
-     else
-      {
-       __random_init_2state = TRUE;
-       if (__verbose) 
+        /* unrecognized +/-, if -, warning, else inform */ 
+        if (olp->optnum == -1)
         {
-         __cv_msg("  Random 2-state initialization turned on with seed=%d.\n", 
-           __init_seed);
+            if (strlen(chp) == 1)
+            {
+                __gfwarn(506, olp->optfnam_ind, olp->optlin_cnt,
+                         "%s option prefix without following option name illegal - ignored",
+                         chp);
+                olp = olp->optlnxt;
+                continue;
+            } 
+
+            if (*chp == '-')
+                __gfwarn(506, olp->optfnam_ind, olp->optlin_cnt,
+                         "unrecogized option %s - ignored ", olp->opt);
+            else __gfinform(410, olp->optfnam_ind, olp->optlin_cnt,
+                            "assuming unrecognized option %s for pli or other simulator",
+                            olp->opt);
+
+            olp = olp->optlnxt;
+            continue;
         }
-      }
-     break;
-    case CO_LBEXT:
-     chp2 = olp->opt;
-     if (__last_lbx != -1)
-      {
-       __gfwarn(598, olp->optfnam_ind, olp->optlin_cnt,
-        "+libext+ option for -y library directories cannot be repeated - ignored");
-       /* need to move to next option */
-       break;
-      }
-    
-     if (!bld_lbxtab(&(chp2[8]), olp)) break;
+        oi = olp->optnum;
+        switch (oi) {
+            /* ignore already processed */
+        case CO_LOG: case CO_HELP: case CO_QUIET: case CO_VERB: break;
+        case CO_VERB_MEM: break;
+
+                          /* if was not able to open nest file error here */
+        case CO_F: 
+                          /* if -f option expanded - will be removed before here */
+                          /* left only if error (cannot open file) */
+                          if (olp->optlnxt == NULL)
+                          {
+                              __gferr(920, olp->optfnam_ind, olp->optlin_cnt,
+                                      "-f include argument not followed by file name");
+                              continue;
+                          }
+                          olp = olp->optlnxt; 
+                          /* -f not followed by file name in nested -f file */
+                          if (olp->is_emark)
+                          {
+                              /* here may have long list of emarks that must be skipped */
+                              __gferr(920, olp->optfnam_ind, olp->optlin_cnt,
+                                      "nested -f include argument not followed by file name");
+                              break;
+                          }
+                          __gferr(920, olp->optfnam_ind, olp->optlin_cnt,
+                                  "cannot open -f include argument file %s", olp->opt);
+                          olp->optnum = -2;
+                          break;
+
+                          /* options followed by 1 white space separated argument */
+        case CO_IAINPUT:
+                          sav_olp = olp;
+                          olp = olp->optlnxt; 
+                          if (olp != NULL) chp = olp->opt;
+                          if (olp == NULL || olp->is_emark || chp == NULL || *chp == '+'
+                              || *chp == '-')
+                          {
+                              __gfwarn(505, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
+                                       "-i option not followed by startup interactive input file name"); 
+                              continue;
+                          }
+                          olp->optnum = -2;
+                          /* make sure it can be opened */
+                          if ((f = __tilde_fopen(chp, "r")) == NULL)
+                          {
+                              __gfwarn(505, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
+                                       "cannot open -i startup interactive input file %s - input from stdin",
+                                       chp);
+                              break;
+                          }
+                          __my_fclose(f);
+                          __cmd_start_fnam = __pv_stralloc(chp);
+                          if (__verbose)
+                          {
+                              __cv_msg("  Startup interactive input will be read from file \"%s\".\n",
+                                       __cmd_start_fnam);
+                          }
+                          /* SJM 04-02-09 - for interpreter/debugger only options, if have not */
+                          if (__compiled_sim || __no_iact)
+                          {
+                              __gfwarn(642, olp->optfnam_ind, olp->optlin_cnt,
+                                       "interpreter only option %s before +interp option  - will be ignored for compiled sim",
+                                       sav_olp->opt);
+                          }
+                          break; 
+        case CO_KEY:
+                          sav_olp = olp;
+                          olp = olp->optlnxt; 
+                          if (olp != NULL) chp = olp->opt;
+                          if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
+                          {
+                              __gfwarn(505, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
+                                       "-k option not followed by file name for transcript of typed keys");
+                              continue; 
+                          }  
+                          olp->optnum = -2;
+                          __gfwarn(621, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
+                                   "-k option no effect - key files not supported (use $input scripts)");
+                          /* only open if needed (must go in malloc as separate) */
+                          break;
+        case CO_TRACEFILE:
+                          sav_olp = olp;
+                          olp = olp->optlnxt; 
+                          if (olp != NULL) chp = olp->opt;
+                          if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
+                          {
+                              __gfwarn(509, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
+                                       "+tracefile option not followed by file name - previous (stdout?) used");
+                              continue; 
+                          }  
+                          olp->optnum = -2;
+                          /* only open when tracing enabled */
+                          if (strcmp(chp, "STDOUT") == 0) strcpy(chp, "stdout"); 
+                          if (__tr_fnam != NULL) __my_free(__tr_fnam, strlen(__tr_fnam) + 1);
+                          __tr_fnam = __pv_stralloc(chp);
+                          __tr_s = NULL;
+                          if (__verbose)
+                              __cv_msg(
+                                       "  Statement and/or event trace output will be written to file \"%s\".\n",
+                                       __tr_fnam);
+                          /* in case -t or -et precedes this option open now */
+                          if (__st_tracing || __ev_tracing || __pth_tracing) __maybe_open_trfile();
+                          break;
+        case CO_SDF_LOG:
+                          sav_olp = olp;
+                          olp = olp->optlnxt; 
+                          if (olp != NULL) chp = olp->opt;
+                          if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
+                          {
+                              __gfwarn(505, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
+                                       "+sdf_log_file setting option not followed by file name");
+                              continue; 
+                          }  
+                          olp->optnum = -2;
+                          if (__sdf_opt_log_fnam != NULL)
+                              __my_free(__sdf_opt_log_fnam, strlen(__sdf_opt_log_fnam) + 1);
+                          __sdf_opt_log_fnam = __pv_stralloc(chp);
+
+                          if (__verbose)
+                          {
+                              __cv_msg(
+                                       "  SDF messages and errors will be written to separate SDF log file %s.\n",
+                                       __sdf_opt_log_fnam);
+                          }
+                          break;
+        case CO_SDFANNOTATE:
+                          sav_olp = olp;
+                          olp = olp->optlnxt; 
+                          if (olp != NULL) chp = olp->opt;
+                          if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
+                          {
+                              __gfwarn(593, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
+                                       "+sdf_annotate option not followed by [file][+<optional scope name>] - ignored");
+                              continue;
+                          }
+                          olp->optnum = -2;
+                          do_sdflocdef(chp, __in_fils[sav_olp->optfnam_ind], sav_olp->optlin_cnt);
+                          break;
+        case CO_MAXERRS:
+                          sav_olp = olp;
+                          olp = olp->optlnxt; 
+                          if (olp != NULL) chp = olp->opt;
+                          if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
+                          {
+bad_maxerrs:
+                              __gfwarn(502, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
+                                       "maximum error number must be 0 (no limit) or positive");
+                              continue;
+                          }
+                          olp->optnum = -2;
+                          if (sscanf(chp, "%d", &tmp) != 1 || tmp < 0) goto bad_maxerrs;
+                          __max_errors = tmp; 
+                          if (__max_errors != 0 && __verbose)
+                              __cv_msg(
+                                       "  Translation will stop after %d errors instead of default %d.\n",
+                                       __max_errors, MAX_ERRORS); 
+                          else
+                          {
+                              if (__verbose)
+                                  __cv_msg("  Default error termination limit disabled.\n");
+                          }
+                          break;
+        case CO_V:
+                          sav_olp = olp;
+                          olp = olp->optlnxt; 
+                          if (olp != NULL) chp = olp->opt;
+                          if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
+                          {
+                              __gfwarn(501, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
+                                       "-v library file option not followed by file name - ignored");
+                              continue;
+                          }
+                          olp->optnum = -2;
+                          if (strcmp(chp, ".") == 0 || strcmp(chp, "..") == 0)
+                          {
+                              __gfwarn(623, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
+                                       "-v library file %s illegal", chp);
+                          }
+                          add_lbfil(chp, 'v');
 #ifndef __CVC_RT__
-     if (__verbose)
-      {
-       __cv_msg(
-        "  %s suffix(es) used for -y library extensions from +libext+ options.\n",
-        &(olp->opt[7])); 
-      }
+                          /* AIV 11/14/09 - don't need to see this at compiled rt */
+                          if (__verbose)
+                              __cv_msg("  File \"%s\" in library from -v option.\n", chp); 
 #endif
-     break;
-    /* options where arg is suffix of option */
-    case CO_SUPPWARNS:
-     chp2 = olp->opt;
-     len = strlen(chp2);
-     /* if optional ending plus left out - add here */
-     if (chp2[len - 1] != '+')
-      {
-       /* SJM - 12/20/02 - must copy to work string because no room to add */
-       /* plus if not added by user */
-       strcpy(s1, chp2);
-       s1[len] = '+'; s1[len + 1] = '\0';
-       chp2 = s1;
-      }
+                          break;
+        case CO_LIBLIST:
+                          /* -L library */
+                          sav_olp = olp;
+                          olp = olp->optlnxt; 
+                          if (olp != NULL) chp = olp->opt;
+                          if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
+                          {
+                              __gfwarn(501, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
+                                       "-L library map file option not followed by file name - ignored");
+                              continue;
+                          }
+                          olp->optnum = -2;
+                          /* set the global name of the -L library name */
+                          __cmdl_library = __pv_stralloc(chp);
+#ifndef __CVC_RT__
+                          if (__verbose)
+                              __cv_msg("  File \"%s\" in library from -L option.\n", chp); 
+#endif
+                          break;
+        case CO_LIBMAP:
+                          /* +config [filename] */
+                          sav_olp = olp;
+                          olp = olp->optlnxt; 
+                          if (olp != NULL) chp = olp->opt;
+                          if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
+                          {
+                              __gfwarn(501, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
+                                       "+config [file] library map file option not followed by file name - ignored");
+                              continue;
+                          }
+                          olp->optnum = -2;
 
-     /* returns F on error, so tracing for not emitted on T */
-     if (add_suppwarn(chp2, olp)) 
-      {
-       if (__verbose)
-        __cv_msg(
-         "  Following warning or interactive message(s) %s will not be emitted.\n",
-         &(chp2[16]));
-      }
-     break;
-    /* options without arguments */
-    case CO_C:
-     if (__verbose)
-      {
-       __cv_msg(
-        "  Translate only - all files and library directories will be checked.\n");
-      }
-     __compile_only = TRUE;
-     break;
-    case CO_PARSEONLY:
-     if (__verbose)
-      {
-       __cv_msg(
-        "  Parse only - for quick syntax check of separate modules.\n");
-      }
-     __parse_only = TRUE;
-     break;
-    case CO_STOP:
-     if (__verbose)
-      __cv_msg("  Stopping into interactive mode before simulation begins.\n");
-     /* this is not checked until sim begins (if it does) */
-     __stop_before_sim = TRUE;
+                          mapfp = (struct mapfiles_t *) __my_malloc(sizeof(struct mapfiles_t));
+                          mapfp->mapfnam = __pv_stralloc(chp);
+                          mapfp->mapfnxt = NULL;
 
-     /* SJM 04-02-09 - for interpreter/debugger only options, if have not */
-     if (__compiled_sim || __no_iact)
-      {
-       __gfwarn(642, olp->optfnam_ind, olp->optlin_cnt,
-        "interpreter only option %s before +interp option  - will be ignored for compiled sim",
-        olp->opt);
-      }
-     break;
-    case CO_E:
-     __no_errs = TRUE;
-     if (__verbose) __cv_msg("  Error messages will not be printed.\n");
-     break;
-    case CO_D:
-     __decompile = TRUE;
-     if (__verbose)
-      __cv_msg(
-       "  Source after generate and defparam expansion will be decompiled and printed.\n");
-     break;
-    case CO_D_ULINE:
-     __decompile = TRUE;
-     __repl_gen_dot_uline = TRUE;
-     if (__verbose)
-      __cv_msg(
-       "  Source after generate decompiled with generated dots in names replaced by underscore.\n");
-     break;
-    case CO_DMP_ARRAYS:
-     __dump_arrays = TRUE;
-     if (__verbose) __cv_msg("  Dumping array values.\n");
-     break;
-    case CO_DMP_ARRAY_CELLS:
-     __dump_array_cells = TRUE;
-     __dump_arrays = TRUE;
-     if (__verbose) __cv_msg("  Dumping array cell values.\n");
-     break;
-    case CO_D_ESC:
-     __decompile = TRUE;
-     __repl_gen_dot_esc = TRUE;
-     if (__verbose)
-      __cv_msg(
-       "  Source after generate decompiled with generated dots in names changed to escaped.\n");
-     break;
-    case CO_A:
-     if (__verbose)
-      __cv_msg("-a accelerate option no effect - on by default.\n");
-     break;
-    case CO_AOFF:
-     if (__verbose)
-      __cv_msg("port and gate assignments will not be accelerated.\n");
-     __accelerate = FALSE;
-     break;
-    case CO_X:
-     if (__verbose)
-      __cv_msg("-x option no effect - vector wires expanded by default.\n");
-     break;
-    case CO_DEBUG:
-     __debug_flg = TRUE;
-     if (__verbose)
-      __cv_msg("  Debugging information will be printed.\n");
-     break;
-    case CO_MINDEL:
-     __mintypmax_sel = DEL_MIN;
-     if (__verbose)
-      __cv_msg("  Min:typ:max expressions will use the minimum value.\n");
-     break;
-    case CO_TYPDEL:
-     __mintypmax_sel = DEL_TYP;
-     if (__verbose)
-      __cv_msg(
-       "  Min:typ:max expressions will use the typical value (default).\n");
-     break;
-    case CO_MAXDEL:
-     __mintypmax_sel = DEL_MAX;
-     if (__verbose)
-      __cv_msg("  Min:typ:max expressions will use the maximum value.\n");
-     break;
-    case CO_SETTRACE:
-     __st_tracing = TRUE;
-     __maybe_open_trfile();
-     if (__verbose)
-      __cv_msg("  Execution of behavioral statements will be traced.\n");
-     break;
-    case CO_SETEVTRACE:
-     __ev_tracing = TRUE;
-     __maybe_open_trfile();
-     if (__verbose) __cv_msg("  Event processing will be traced.\n");
-     break;
-    case CO_SETPTHTRACE:
-     __pth_tracing = TRUE;
-     __maybe_open_trfile();
-     if (__verbose)
-      __cv_msg("  Specify delay Path will be traced in detail.\n");
-     break;
-    case CO_GATE_EATER: case CO_NO_GATE_EATER:
-     __gfwarn(507, olp->optfnam_ind, olp->optlin_cnt,
-      "  +gateeater option obsolete - option ignored");
-     break;
-    case CO_W:
-     __no_warns = TRUE;
-     if (__verbose) __cv_msg("  Warning messages will not be printed.\n");
-     break;
-    case CO_INFORM:
-     __no_informs = FALSE;
-     if (__verbose) __cv_msg("  Inform messages will be printed.\n");
-     break;
-    case CO_UC:
-     __gfwarn(507, olp->optfnam_ind, olp->optlin_cnt,
-      "  -u option unsupported - input is case sensitive");
-     break;
-    case CO_SDFVERB:
-     __sdf_verbose = TRUE;
-     
-     if (__verbose)
-      __cv_msg("  SDF annotation tracing verbose mode is on.\n");
-     break;
-    case CO_DPIVERB:
-     __dpi_verbose = TRUE;
-     if (__verbose)
-      __cv_msg("  DPI IMPORT -svlib existence checking verbose mode is on.\n");
-     break;
-    case CO_IGNORE_SDF_IOPATH_EDGES:
-     __ignore_sdf_iopath_edges = TRUE;
-     
-     if (__verbose)
-      __cv_msg("  Ignoring SDF (IOPATH edges when matching specify paths.\n");
-     break;
-    case CO_SDF_DURING_SIM:
-     __sdf_during_sim = TRUE;
-     if (__verbose)
-      {
-       __cv_msg("  SDF annotation executed during sim - won't work with compiler");
-      }
-     break;
-    case CO_SDF_NO_ERRS:
-     __sdf_no_errs = TRUE;
-     if (__verbose) __cv_msg("  SDF error messages will not be printed.\n");
-     break;
-    case CO_SDF_NO_WARNS:
-     __sdf_no_warns = TRUE;
-     if (__verbose) __cv_msg("  SDF warning messages will not be printed.\n");
-     break;
-    case CO_LBVERB:
-     __lib_verbose = TRUE;
-     __cfg_verbose = TRUE;
-     if (__verbose) __cv_msg("  Library tracing verbose mode is on.\n");
-     break;
-    case CO_SWITCHVERB:
-     /* AIV 03/30/12 - this should only turn on for compile time */
-     if (__compiled_sim && __running_cvc_exe) break;
-     __switch_verbose = TRUE;
-     /* SJM 11/29/00 - message only output if verbose not switch verbose */
-     if (__verbose)
-      __cv_msg("  Switch channel construction verbose mode is on.\n");
-     break;
-    case CO_CHG_PORTDIR:
-     /* SJM 11/29/00 - new option that changes port direction if connected */  
-     /* as inout, most designs do not need this option but some do */
-     __chg_portdir = TRUE;
-     if (__verbose)
-      __cv_msg(
-       "  Changing port type (direction) to inout for ports connected as inout.\n");
-     break;
-    case CO_SCHD_ALW_FIRST:
-     /* SJM 05-13-13 - have request to change so always blocks are */
-     /* all initialized (armed) before init blocks - made an option */
-     /* because some bug reports wanted old order some new - think */
-     /* option needed to get altera libraries to work */ 
-     __sched_always_blocks_first = TRUE;
-     if (__verbose)
-      __cv_msg(
-       "  Initialization event order changed so always blocks armed before any initial blocks started at time 0.\n");
-     break;
-    case CO_NB_NOSEP_QUEUE:
-     /* AIV 06/28/05 - new option that changes causes old non blocking */
-     /* algorithm that did not have separate after pnd0 (each section) */
-     /* event queue to be used */
-     /* AIV 04/16/07 - this option has been deprecated - never really used */
-     __gfwarn(595, olp->optfnam_ind, olp->optlin_cnt,
-      "+no_separate_nb_queue option has been deprecated");
-     break;
-    case CO_LIBRESCAN:
-     __lib_rescan = TRUE;
-     if (__verbose)
-      __cv_msg(
-       "  Library rescanned from beginning after every name resolved.\n");
-     break;
-    case CO_LIBORD:
-     __gfwarn(503, olp->optfnam_ind, olp->optlin_cnt,
-      "+liborder option unsupported");
+                          if (__map_files_hd == NULL) __map_files_hd = __map_files_tail = mapfp;
+                          else
+                          {
+                              __map_files_tail->mapfnxt = mapfp;
+                              __map_files_tail = mapfp;
+                          }
+#ifndef __CVC_RT__
+                          if (__verbose)
+                              __cv_msg(
+                                       "  Will read \"%s\" map lib file specified by +config [file] option.\n",
+                                       mapfp->mapfnam); 
+#endif
+                          break;
+        case CO_FRSPICE:
+                          break;
+        case CO_Y:
+                          sav_olp = olp;
+                          olp = olp->optlnxt; 
+                          if (olp != NULL) chp = olp->opt;
+                          if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
+                          {
+                              __gfwarn(593, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
+                                       "-y library directory option not followed by path name - ignored");
+                              continue;
+                          }
+                          olp->optnum = -2;
+                          add_lbfil(chp, 'y');
+#ifndef __CVC_RT__
+                          if (__verbose)
+                              __cv_msg("  Directory \"%s\" searched for libraries from -y option.\n",
+                                       olp->opt); 
+#endif
+                          break;
+        case CO_DEFINE:
+                          chp = olp->opt;
+                          do_cmdmacdef(&(chp[8]), olp);
+                          break;
+        case CO_INCDIR:
+                          chp2 = olp->opt;
+                          /* error message on bad format emitted inside here */
+                          if (!bld_incdtab(&(chp2[8]), olp)) break;
+#ifndef __CVC_RT__
+                          if (__verbose)
+                          {
+                              __cv_msg(
+                                       "  %s additional +incdir+ paths searched to find `include files.\n",
+                                       &(olp->opt[7])); 
+                          }
+#endif
+                          break;
+        case CO_LOADPLI1:
+#ifdef __STATIC_PLI__
+                          __gfwarn(3123, olp->optfnam_ind, olp->optlin_cnt,
+                                   "+loadpli1 = option illegal when using old style statically linked cverobj.o - ignored");
+#else
+                          chp2 = olp->opt;
+                          if ((ldp = bld_loadpli_lbs(&(chp2[10]), olp, TRUE)) == NULL) break;
+                          if (__verbose)
+                          {
+                              /* this can't fail since know well formed */
+                              chp3 = strrchr(chp2, ':');
+                              /* DBG LINT remove -- */
+                              if (chp3 == NULL) __misc_terr(__FILE__, __LINE__);
+                              /* -- */
+                              if (strcmp(chp3, "") == 0) strcpy(__xs, "[none]");
+                              else strcpy(__xs, chp3);
+                              __cv_msg(
+                                       "  +loadpli1 dynamic library %s loaded with bootstrap routine(s) %s\n",
+                                       ldp->libnam, __xs);
+                          }
+#endif
+                          break;
+        case CO_LOADVPI:
+#ifdef __STATIC_PLI__
+                          __gfwarn(3123, olp->optfnam_ind, olp->optlin_cnt,
+                                   "+loadvpi= option illegal when using old style statically linked cverobj.o - ignored");
+#else
+                          chp2 = olp->opt;
+                          if ((ldp = bld_loadpli_lbs(&(chp2[9]), olp, FALSE)) == NULL) break;
+                          if (__verbose)
+                          {
+                              /* this can't fail since know well formed */
+                              chp3 = strrchr(chp2, ':');
+                              /* DBG LINT remove -- */
+                              if (chp3 == NULL) __misc_terr(__FILE__, __LINE__);
+                              /* -- */
+                              if (strcmp(chp3, "") == 0) strcpy(__xs, "[none]");
+                              else strcpy(__xs, chp3);
+                              __cv_msg(
+                                       "  +loadvpi= dynamic library %s loaded with bootstrap routine(s) %s\n",
+                                       ldp->libnam, __xs);
+                          }
+#endif
+                          break;
+
+        case CO_DPI_WR_HDRS:
+                          __wr_dpi_c_hdrs = TRUE;
+                          if (__verbose)
+                          {
+                              __cv_msg(
+                                       "  Writing DPI C routine header prototypes to file dpi_hdrs.h\n");
+                          }
+                          break;
+        case CO_DPI_SVLIB:
+                          /* if users is using -sv_lib assume SV parsing */
+                          __sv_parse = TRUE;
+                          sav_olp = olp;
+                          olp = olp->optlnxt; 
+                          if (olp != NULL) chp = olp->opt;
+                          if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
+                          {
+                              __gfwarn(4302, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
+                                       "+sv_lib option not followed by required [path] - ignored");
+                              continue;
+                          }
+                          olp->optnum = -2;
+                          svlp = (struct sv_lib_t *) __my_malloc(sizeof(struct sv_lib_t));
+                          /* SJM 02-12-13 - bug was assuming paths are relative */
+                          if (*chp == '/')
+                          {
+                              __gfwarn(4311, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
+                                       "-sv_lib option library path name %s is absolute - not portable but still used",
+                                       chp);
+                              strcpy(s1, chp);
+                          }
+                          else if (strncmp(chp, "./", 2) == 0)
+                          {
+                              /* SJM 02-12-13 - if the ./ already there, do not add */
+                              strcpy(s1, chp);
+                          }
+                          else
+                          {
+                              /* SJM 02-12-13 - add the "./" - this makes simple leave -sv lib .so */
+                              /* in dircvc runs in works (handles most common relative paths too) */
+                              strcpy(s1, "./");
+                              strcat(s1, chp);
+                          }
+                          if (stat(s1, &st) != 0)
+                          {
+                              __gfwarn(4303, olp->optfnam_ind, olp->optlin_cnt,
+                                       "-sv_lib library file %s - cannot be opened or does not exist", chp);
+                          }
+                          svlp->does_not_exist = FALSE;
+                          svlp->path = __pv_stralloc(s1);
+                          svlp->svnxt = NULL;
+                          if (__sv_lib_hdrp == NULL) __sv_lib_hdrp = __sv_lib_endp = svlp;
+                          else
+                          {
+                              __sv_lib_endp->svnxt = svlp;
+                              __sv_lib_endp = svlp;
+                          }
+                          if (__verbose)
+                          {
+                              __cv_msg("  Linking in DPI library \"%s\".\n", chp);
+                          }
+                          break;
+        case CO_SV_PARSE:
+        case CO_SV_PARSE2:
+                          __sv_parse = TRUE;
+                          if (__verbose)
+                              __cv_msg("  Will parse source with System Verilog keywords allowed.\n");
+                          break;
+        case CO_OPTCFGFIL:
+                          sav_olp = olp;
+                          olp = olp->optlnxt; 
+                          if (olp != NULL) chp = olp->opt;
+                          if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
+                          {
+                              __gfwarn(4305, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
+                                       "-optconfigfile file name missing");
+                              continue;
+                          }
+                          /* mark not input file */
+                          olp->optnum = -2;
+                          if (stat(chp, &st) != 0)
+                          {
+                              __gfwarn(4306, olp->optfnam_ind, olp->optlin_cnt,
+                                       "-optconfigfile file %s - can not be opened", chp);
+                          }
+                          ocfnlp = (struct ocfil_lst_t *)__my_malloc(sizeof(struct ocfil_lst_t));
+                          ocfnlp->ocfnam = __pv_stralloc(olp->opt);
+                          ocfnlp->oc_stmts = NULL;
+                          ocfnlp->oclnxt = NULL;
+                          /* SJM 12-11-10 - file order must be preserved */ 
+                          if (__last_optcfg_fil == NULL) __optcfg_fils = __last_optcfg_fil = ocfnlp; 
+                          else
+                          {
+                              ocfnlp->oclnxt = __last_optcfg_fil;
+                              __last_optcfg_fil = ocfnlp;
+                          }
+                          if (__verbose) 
+                          {
+                              /* SJM 12-17-10 - need to print actual opt config fil name */
+                              __cv_msg(
+                                       "  Adding -optconfigfile %s containing config attributes.\n",
+                                       ocfnlp->ocfnam);
+                          }
+                          break;
+        case CO_TOGGLE:
+                          if (__verbose) __cv_msg("  Toggle coverage report on.\n");
+                          __toggle_coverage = TRUE;
+                          break;
+        case CO_TOGGLE_FILE:
+                          olp2 = olp;
+                          olp = olp->optlnxt;
+                          if (olp == NULL)
+                          {
+                              /* AIV 08/17/11 - need to use olp2 not next arg */
+                              __gferr(920, olp2->optfnam_ind, olp2->optlin_cnt,
+                                      "-toggle_file not followed by file name");
+                              continue;
+                          }
+                          olp->optnum = -2;
+                          __toggle_coverage_file_name = __pv_stralloc(olp->opt);
+                          if (__verbose) 
+                          {
+                              __cv_msg("  Toggle coverage report on writing to file %s.\n",
+                                       __toggle_coverage_file_name);
+                          }
+                          /* SJM 04-26-13 - now when setting toggle file - do not turn on toggle */
+                          /* coverage - do not know yet - may be turned on in optcfg file */
+                          break;
+        case CO_TOGGLE_REPORT_INSTANCE:
+                          if (__verbose) __cv_msg("  Toggle reporting per instance.\n");
+                          __old_toggle_rpt_instance = TRUE;
+                          break;
+        case CO_DRVN_CONST_AS_TGL:
+                          //SJM 11-03-12 - LOOKATME? - think this should be default
+                          if (__verbose)
+                          {
+                              __cv_msg(
+                                       "  Wires driven by constants will not appear in untoggled report.\n");
+                          } 
+                          __drvn_const_as_tgled = TRUE;
+                          break;
+        case CO_DRVN_CONST_RPT_CONCISE:
+                          if (__verbose)
+                          { 
+                              __cv_msg(
+                                       "  New concise format report lists wire bits driven by constants.\n");
+                          }
+                          __drvn_const_rpt_concise = TRUE;
+                          break;
+        case CO_UNTGL_RPT_CONCISE:
+                          if (__verbose)
+                          { 
+                              __cv_msg(
+                                       "  New concise untoggled only report - ignores non concise report options.\n");
+                          }
+                          __untgled_rpt_concise = TRUE;
+                          break;
+                          // SJM 04-18-13 - START OF NEW TGLDAT OPTIONS
+        case CO_WRITE_TGLDAT:
+                          /* this will write to the toggle.tgldat file unless explicit opt used */
+                          __wr_tgldat_on = TRUE;
+                          if (__verbose)
+                          { 
+                              __cv_msg(
+                                       "  Toggle coverage results for this run written to default verilog.tgldat file.\n");
+                          }
+                          break;
+        case CO_WRITE_TGLDAT_FILE:
+                          /* AIV 08/17/11 - need to use olp2 not next arg */
+                          olp2 = olp;
+                          olp = olp->optlnxt;
+                          if (olp == NULL)
+                          {
+                              __gferr(920, olp2->optfnam_ind, olp2->optlin_cnt,
+                                      "-write_toggle_data_file option not followed by file name");
+                              continue;
+                          }
+                          olp->optnum = -2;
+                          __wr_tgldat_file = __pv_stralloc(olp->opt);
+                          if (__verbose) 
+                          {
+                              __cv_msg(
+                                       "  Toggle coverage results for this run written to .tgldat file %s.\n",
+                                       __wr_tgldat_file);
+                          }
+                          /* must turn on too */  
+                          __wr_tgldat_on = TRUE;
+                          break;
+        case CO_SET_TGLED_FROM_FILE:
+                          olp2 = olp;
+                          olp = olp->optlnxt;
+                          if (olp != NULL) chp = olp->opt;
+                          if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
+                          {
+                              __gferr(920, olp2->optfnam_ind, olp2->optlin_cnt,
+                                      "-set_toggled_from_file option not followed by .tgldat file name");
+                              continue;
+                          }
+                          olp->optnum = -2;
+                          if (stat(chp, &st) != 0)
+                          {
+                              __gfwarn(4301, olp->optfnam_ind, olp->optlin_cnt,
+                                       "-set_togled_from_file .tgldat file %s - can not be opened", chp);
+                          }
+
+                          /* build the .tgldat input file name record */
+                          tgldat_ifp = (struct tgldat_in_lst_t *)
+                              __my_malloc(sizeof(struct tgldat_in_lst_t));
+                          tgldat_ifp->in_tgldat_fnam = __pv_stralloc(olp->opt);
+                          tgldat_ifp->tgldat_in_nxt = NULL;
+                          if (__tgldat_infils_lst_hd == NULL)
+                          { 
+                              __tgldat_infils_lst_hd = __tgldat_infils_lst_end = tgldat_ifp;
+                          }
+                          else __tgldat_infils_lst_end->tgldat_in_nxt = tgldat_ifp;
+                          if (__verbose) 
+                          {
+                              __cv_msg(
+                                       "  .tgldat file %s read and used to set toggled bits from previous run.\n",
+                                       tgldat_ifp->in_tgldat_fnam);
+                          }
+                          break;
+        case CO_TGLVERBOSE:
+                          if (__verbose)
+                          {
+                              __cv_msg(
+                                       "  .tgldat file reading mis-match verbose warnings will be printed.\n");
+                          }
+                          __tgl_verbose = TRUE;
+                          break;
+        case CO_TOGGLE_REPORT_BITS:
+                          if (__verbose) __cv_msg("  Old style toggle reporting per bits.\n");
+                          __old_toggle_rpt_bits = TRUE;
+                          break;
+        case CO_TOGGLE_UNCOVERED:
+                          if (__verbose) __cv_msg("  Old style toggle reporting uncovered bits.\n");
+                          __old_toggle_rpt_uncovered = TRUE;
+                          break;
+        case CO_TOGGLE_COVERED:
+                          if (__verbose) __cv_msg("  Old style toggle reporting covered bits.\n");
+                          __old_toggle_rpt_covered = TRUE;
+                          break;
+        case CO_EVENT_COVERAGE:
+                          if (__verbose) __cv_msg("  Event coverage reporting on.\n");
+                          __event_coverage = TRUE;
+                          break;
+        case CO_EVENT_COVERAGE_FILE:
+                          if (__verbose) __cv_msg("  Event coverage reporting on.\n");
+                          __event_coverage = TRUE;
+                          olp2 = olp;
+                          olp = olp->optlnxt;
+                          if (olp == NULL)
+                          {
+                              /* AIV 08/17/11 - need to use olp2 not next arg */
+                              __gferr(920, olp2->optfnam_ind, olp2->optlin_cnt,
+                                      "-event_coverage_file not followed by file name");
+                              continue;
+                          }
+                          olp->optnum = -2;
+                          __event_coverage_file_name = __pv_stralloc(olp->opt);
+                          if (__verbose) 
+                          {
+                              __cv_msg("  Event coverage report on writing to file %s.\n",
+                                       __event_coverage_file_name);
+                          }
+                          break;
+        case CO_STMT_COVERAGE:
+                          if (__verbose) __cv_msg("  Statement coverage reporting on.\n");
+                          __stmt_coverage = TRUE;
+                          break;
+        case CO_STMT_TASKS_COVERAGE:
+                          if (__verbose) __cv_msg("  Statement coverage for tasks reporting on.\n");
+                          __stmt_coverage = TRUE;
+                          __stmt_coverage_tasks = TRUE;
+                          break;
+        case CO_STMT_COVERAGE_FILE:
+                          if (__verbose) __cv_msg("  Statement coverage reporting on.\n");
+                          __stmt_coverage = TRUE;
+                          olp2 = olp;
+                          olp = olp->optlnxt;
+                          if (olp == NULL)
+                          {
+                              /* AIV 08/17/11 - need to use olp2 not next arg */
+                              __gferr(920, olp2->optfnam_ind, olp2->optlin_cnt,
+                                      "-stmt_coverage_file not followed by file name");
+                              continue;
+                          }
+                          olp->optnum = -2;
+                          __stmt_coverage_file_name = __pv_stralloc(olp->opt);
+                          if (__verbose) 
+                          {
+                              __cv_msg(" Statement coverage report on writing to file %s.\n",
+                                       __stmt_coverage_file_name);
+                          }
+                          break;
+        case CO_OVERRIDE_CHANGE:
+                          /* SJM 04-18-13 - option for internal debug - lets exec not match src */ 
+                          __override_change = TRUE;
+                          if (__verbose)
+                          {
+                              __cv_msg("  Overriding model change check\n");
+                          }
+                          break;
+        case CO_SAME_PARAM_MUST_SPLIT:
+                          __same_param_must_split = TRUE;
+                          if (__verbose)
+                          {
+                              __cv_msg(
+                                       "  turn off optimization that merges split same param types.\n");
+                          }
+                          break;
+        case CO_RANDOM:
+                          __random_init = TRUE;
+                          if (__verbose) __cv_msg("  Random initialization turned on.\n");
+                          break;
+        case CO_RANDOM_2STATE:
+                          /* must turn on both flags */
+                          __random_init = TRUE;
+                          __random_init_2state = TRUE;
+                          if (__verbose) __cv_msg("  Random 2-state initialization turned on.\n");
+                          break;
+        case CO_RANDOM_SEED:
+        case CO_RANDOM_2STATE_SEED:
+                          /* +xtracemax=10 - set the new max value */
+                          chp2 = strchr(olp->opt, '=');
+                          /* DBG remove -- */
+                          if (chp2 == NULL) __misc_terr(__FILE__, __LINE__);
+                          /* ---- */
+                          chp2++;
+                          __init_seed = atoi(chp2);   
+                          __random_init = TRUE;
+                          if (oi == CO_RANDOM_SEED)
+                          {
+                              if (__verbose) 
+                              {
+                                  __cv_msg("  Random initialization turned on with seed=%d.\n", 
+                                           __init_seed);
+                              }
+                          }
+                          else
+                          {
+                              __random_init_2state = TRUE;
+                              if (__verbose) 
+                              {
+                                  __cv_msg("  Random 2-state initialization turned on with seed=%d.\n", 
+                                           __init_seed);
+                              }
+                          }
+                          break;
+        case CO_LBEXT:
+                          chp2 = olp->opt;
+                          if (__last_lbx != -1)
+                          {
+                              __gfwarn(598, olp->optfnam_ind, olp->optlin_cnt,
+                                       "+libext+ option for -y library directories cannot be repeated - ignored");
+                              /* need to move to next option */
+                              break;
+                          }
+
+                          if (!bld_lbxtab(&(chp2[8]), olp)) break;
+#ifndef __CVC_RT__
+                          if (__verbose)
+                          {
+                              __cv_msg(
+                                       "  %s suffix(es) used for -y library extensions from +libext+ options.\n",
+                                       &(olp->opt[7])); 
+                          }
+#endif
+                          break;
+                          /* options where arg is suffix of option */
+        case CO_SUPPWARNS:
+                          chp2 = olp->opt;
+                          len = strlen(chp2);
+                          /* if optional ending plus left out - add here */
+                          if (chp2[len - 1] != '+')
+                          {
+                              /* SJM - 12/20/02 - must copy to work string because no room to add */
+                              /* plus if not added by user */
+                              strcpy(s1, chp2);
+                              s1[len] = '+'; s1[len + 1] = '\0';
+                              chp2 = s1;
+                          }
+
+                          /* returns F on error, so tracing for not emitted on T */
+                          if (add_suppwarn(chp2, olp)) 
+                          {
+                              if (__verbose)
+                                  __cv_msg(
+                                           "  Following warning or interactive message(s) %s will not be emitted.\n",
+                                           &(chp2[16]));
+                          }
+                          break;
+                          /* options without arguments */
+        case CO_C:
+                          if (__verbose)
+                          {
+                              __cv_msg(
+                                       "  Translate only - all files and library directories will be checked.\n");
+                          }
+                          __compile_only = TRUE;
+                          break;
+        case CO_PARSEONLY:
+                          if (__verbose)
+                          {
+                              __cv_msg(
+                                       "  Parse only - for quick syntax check of separate modules.\n");
+                          }
+                          __parse_only = TRUE;
+                          break;
+        case CO_STOP:
+                          if (__verbose)
+                              __cv_msg("  Stopping into interactive mode before simulation begins.\n");
+                          /* this is not checked until sim begins (if it does) */
+                          __stop_before_sim = TRUE;
+
+                          /* SJM 04-02-09 - for interpreter/debugger only options, if have not */
+                          if (__compiled_sim || __no_iact)
+                          {
+                              __gfwarn(642, olp->optfnam_ind, olp->optlin_cnt,
+                                       "interpreter only option %s before +interp option  - will be ignored for compiled sim",
+                                       olp->opt);
+                          }
+                          break;
+        case CO_E:
+                          __no_errs = TRUE;
+                          if (__verbose) __cv_msg("  Error messages will not be printed.\n");
+                          break;
+        case CO_D:
+                          __decompile = TRUE;
+                          if (__verbose)
+                              __cv_msg(
+                                       "  Source after generate and defparam expansion will be decompiled and printed.\n");
+                          break;
+        case CO_D_ULINE:
+                          __decompile = TRUE;
+                          __repl_gen_dot_uline = TRUE;
+                          if (__verbose)
+                              __cv_msg(
+                                       "  Source after generate decompiled with generated dots in names replaced by underscore.\n");
+                          break;
+        case CO_DMP_ARRAYS:
+                          __dump_arrays = TRUE;
+                          if (__verbose) __cv_msg("  Dumping array values.\n");
+                          break;
+        case CO_DMP_ARRAY_CELLS:
+                          __dump_array_cells = TRUE;
+                          __dump_arrays = TRUE;
+                          if (__verbose) __cv_msg("  Dumping array cell values.\n");
+                          break;
+        case CO_D_ESC:
+                          __decompile = TRUE;
+                          __repl_gen_dot_esc = TRUE;
+                          if (__verbose)
+                              __cv_msg(
+                                       "  Source after generate decompiled with generated dots in names changed to escaped.\n");
+                          break;
+        case CO_A:
+                          if (__verbose)
+                              __cv_msg("-a accelerate option no effect - on by default.\n");
+                          break;
+        case CO_AOFF:
+                          if (__verbose)
+                              __cv_msg("port and gate assignments will not be accelerated.\n");
+                          __accelerate = FALSE;
+                          break;
+        case CO_X:
+                          if (__verbose)
+                              __cv_msg("-x option no effect - vector wires expanded by default.\n");
+                          break;
+        case CO_DEBUG:
+                          __debug_flg = TRUE;
+                          if (__verbose)
+                              __cv_msg("  Debugging information will be printed.\n");
+                          break;
+        case CO_MINDEL:
+                          __mintypmax_sel = DEL_MIN;
+                          if (__verbose)
+                              __cv_msg("  Min:typ:max expressions will use the minimum value.\n");
+                          break;
+        case CO_TYPDEL:
+                          __mintypmax_sel = DEL_TYP;
+                          if (__verbose)
+                              __cv_msg(
+                                       "  Min:typ:max expressions will use the typical value (default).\n");
+                          break;
+        case CO_MAXDEL:
+                          __mintypmax_sel = DEL_MAX;
+                          if (__verbose)
+                              __cv_msg("  Min:typ:max expressions will use the maximum value.\n");
+                          break;
+        case CO_SETTRACE:
+                          __st_tracing = TRUE;
+                          __maybe_open_trfile();
+                          if (__verbose)
+                              __cv_msg("  Execution of behavioral statements will be traced.\n");
+                          break;
+        case CO_SETEVTRACE:
+                          __ev_tracing = TRUE;
+                          __maybe_open_trfile();
+                          if (__verbose) __cv_msg("  Event processing will be traced.\n");
+                          break;
+        case CO_SETPTHTRACE:
+                          __pth_tracing = TRUE;
+                          __maybe_open_trfile();
+                          if (__verbose)
+                              __cv_msg("  Specify delay Path will be traced in detail.\n");
+                          break;
+        case CO_GATE_EATER: case CO_NO_GATE_EATER:
+                          __gfwarn(507, olp->optfnam_ind, olp->optlin_cnt,
+                                   "  +gateeater option obsolete - option ignored");
+                          break;
+        case CO_W:
+                          __no_warns = TRUE;
+                          if (__verbose) __cv_msg("  Warning messages will not be printed.\n");
+                          break;
+        case CO_INFORM:
+                          __no_informs = FALSE;
+                          if (__verbose) __cv_msg("  Inform messages will be printed.\n");
+                          break;
+        case CO_UC:
+                          __gfwarn(507, olp->optfnam_ind, olp->optlin_cnt,
+                                   "  -u option unsupported - input is case sensitive");
+                          break;
+        case CO_SDFVERB:
+                          __sdf_verbose = TRUE;
+
+                          if (__verbose)
+                              __cv_msg("  SDF annotation tracing verbose mode is on.\n");
+                          break;
+        case CO_DPIVERB:
+                          __dpi_verbose = TRUE;
+                          if (__verbose)
+                              __cv_msg("  DPI IMPORT -svlib existence checking verbose mode is on.\n");
+                          break;
+        case CO_IGNORE_SDF_IOPATH_EDGES:
+                          __ignore_sdf_iopath_edges = TRUE;
+
+                          if (__verbose)
+                              __cv_msg("  Ignoring SDF (IOPATH edges when matching specify paths.\n");
+                          break;
+        case CO_SDF_DURING_SIM:
+                          __sdf_during_sim = TRUE;
+                          if (__verbose)
+                          {
+                              __cv_msg("  SDF annotation executed during sim - won't work with compiler");
+                          }
+                          break;
+        case CO_SDF_NO_ERRS:
+                          __sdf_no_errs = TRUE;
+                          if (__verbose) __cv_msg("  SDF error messages will not be printed.\n");
+                          break;
+        case CO_SDF_NO_WARNS:
+                          __sdf_no_warns = TRUE;
+                          if (__verbose) __cv_msg("  SDF warning messages will not be printed.\n");
+                          break;
+        case CO_LBVERB:
+                          __lib_verbose = TRUE;
+                          __cfg_verbose = TRUE;
+                          if (__verbose) __cv_msg("  Library tracing verbose mode is on.\n");
+                          break;
+        case CO_SWITCHVERB:
+                          /* AIV 03/30/12 - this should only turn on for compile time */
+                          if (__compiled_sim && __running_cvc_exe) break;
+                          __switch_verbose = TRUE;
+                          /* SJM 11/29/00 - message only output if verbose not switch verbose */
+                          if (__verbose)
+                              __cv_msg("  Switch channel construction verbose mode is on.\n");
+                          break;
+        case CO_CHG_PORTDIR:
+                          /* SJM 11/29/00 - new option that changes port direction if connected */  
+                          /* as inout, most designs do not need this option but some do */
+                          __chg_portdir = TRUE;
+                          if (__verbose)
+                              __cv_msg(
+                                       "  Changing port type (direction) to inout for ports connected as inout.\n");
+                          break;
+        case CO_SCHD_ALW_FIRST:
+                          /* SJM 05-13-13 - have request to change so always blocks are */
+                          /* all initialized (armed) before init blocks - made an option */
+                          /* because some bug reports wanted old order some new - think */
+                          /* option needed to get altera libraries to work */ 
+                          __sched_always_blocks_first = TRUE;
+                          if (__verbose)
+                              __cv_msg(
+                                       "  Initialization event order changed so always blocks armed before any initial blocks started at time 0.\n");
+                          break;
+        case CO_NB_NOSEP_QUEUE:
+                          /* AIV 06/28/05 - new option that changes causes old non blocking */
+                          /* algorithm that did not have separate after pnd0 (each section) */
+                          /* event queue to be used */
+                          /* AIV 04/16/07 - this option has been deprecated - never really used */
+                          __gfwarn(595, olp->optfnam_ind, olp->optlin_cnt,
+                                   "+no_separate_nb_queue option has been deprecated");
+                          break;
+        case CO_LIBRESCAN:
+                          __lib_rescan = TRUE;
+                          if (__verbose)
+                              __cv_msg(
+                                       "  Library rescanned from beginning after every name resolved.\n");
+                          break;
+        case CO_LIBORD:
+                          __gfwarn(503, olp->optfnam_ind, olp->optlin_cnt,
+                                   "+liborder option unsupported");
 lib_mth:
-     if (__verbose)
-      __cv_msg("  Using default or +librescan library scanning method.\n");
-     break;
-    case CO_LIBNOHIDE:
-     __gfwarn(594, olp->optfnam_ind, olp->optlin_cnt,
-      "+libnohide option unsupported");
-     goto lib_mth;
-    case CO_NCHG_TRACE:
-     __missing_nchg_trace = TRUE;
-     if (__verbose)
-      __cv_msg("  Tracing late nchg adding - shouldn't be needed.\n");
-     break;
-    case CO_PRTSTATS:
-     /* AIV 03/30/12 - this should only turn on for compile time */
-     if (__compiled_sim && __running_cvc_exe) break;
-     __prt_stats = TRUE;
-     if (__verbose) __cv_msg("  Design content tables will be written.\n");
-     break;
-    case CO_PRTALLSTATS:
-     /* AIV 03/30/12 - this should only turn on for compile time */
-     if (__compiled_sim && __running_cvc_exe) break;
-     __prt_allstats = TRUE;
-     if (__verbose)
-      __cv_msg(
-       "  Voluminous design and module content tables will be written.\n");
-     break;
-    case CO_SPIKEANAL:
-     __gfwarn(591, olp->optfnam_ind, olp->optlin_cnt,
-      "+spikes option name changed - use standardized +show_canceled_e instead");
-     break;
-    case CO_SHOWCANCELE:
-     __show_cancel_e = TRUE;
-     if (__verbose)
-      __cv_msg("  Pulse canceled events X shown (glitches cause X output).\n");
-     break;
-    case CO_NOSHOWCANCELE:
-     __show_cancel_e = FALSE;
-     if (__verbose)
-      __cv_msg(
-       "  Pulse canceled events not shown (glitches removed - default).\n");
-     break;
-    case CO_PULSEX_ONEVENTE:
-     __showe_onevent = TRUE;
-     if (__verbose)
-      __cv_msg("  Pulse shown Xs scheduled at pulse leading edge (default).\n");
-     break;
-    case CO_PULSEX_ONDETECT:
-     __showe_onevent = FALSE;
-     if (__verbose)
-      __cv_msg("  Pulse shown Xs set when pulse (glitch) detected.\n");
-     break;
-    case CO_WARNCANCELE:
-     __warn_cancel_e = TRUE;
-     if (__verbose)
-      __cv_msg("  Warning message emitted when pulse (glitch) detected.\n");
-     break;
-    case CO_NOWARNCANCELE: 
-     __warn_cancel_e = FALSE;
-     if (__verbose)
-      {
-       __cv_msg(
-        "  No warning message emitted when pulse (glitch) detected (detected).\n");
-      }
-     break;
-    case CO_MIPD_CYCLE_PND0_SCHD:
-     __mipd_cycle_pnd0_schd = TRUE;
-     if (__verbose)
-      {
-       __cv_msg(
-        "  Use cycle mode for MIPDS - delay input port change similar to #0.\n");
-      }
-     break;
-    case CO_RMGATEPND0S:
-     __rm_gate_pnd0s = TRUE;  
-     if (__verbose)
-      {
-       __cv_msg(
-        "  All gate #0 delays converted to no delay to speed up simulation.\n");
-      }
-     break;
-    case CO_NORMPTHPND0S:
-     /* remove path pound 0 delays by default */
-     __rm_path_pnd0s = FALSE;  
-     if (__verbose)
-      {
-       __cv_msg("  Disabling removal of all 0 (no effect) path delays.\n");
-      }
-     break;
-    case CO_NOKEEPCOMMANDS:
-     __history_on = FALSE;
-     if (__verbose)
-      {
-       __cv_msg(
-       "  Entered (or $input or piped in) commands not kept on history list.\n");
-      }
-     /* SJM 04-02-09 - for interpreter/debugger only options, if have not */
-     if (__compiled_sim || __no_iact)
-      {
-       __gfwarn(642, olp->optfnam_ind, olp->optlin_cnt,
-        "interpreter only option %s before +interp option  - will be ignored for compiled sim",
-        olp->opt);
-      }
-     break;
-    case CO_OLD_VPI_AFTER_ITER_FREE:
-     __old_vpi_obj_after_iter_free_only = TRUE;
-     if (__verbose)
-      { 
-       __cv_msg(
-        "To match old CVC vpi_, only allow freeing of objects in iterators after iterator freed.\n");
-      }
-     break;
-    case CO_PLIKEEPSRC:
-     if (__verbose)
-      { 
-       __cv_msg(
-        "  +pli_keep_source option removed - all PLI source access kept");
-      }
-     break;
-    case CO_NOIACT:
+                          if (__verbose)
+                              __cv_msg("  Using default or +librescan library scanning method.\n");
+                          break;
+        case CO_LIBNOHIDE:
+                          __gfwarn(594, olp->optfnam_ind, olp->optlin_cnt,
+                                   "+libnohide option unsupported");
+                          goto lib_mth;
+        case CO_NCHG_TRACE:
+                          __missing_nchg_trace = TRUE;
+                          if (__verbose)
+                              __cv_msg("  Tracing late nchg adding - shouldn't be needed.\n");
+                          break;
+        case CO_PRTSTATS:
+                          /* AIV 03/30/12 - this should only turn on for compile time */
+                          if (__compiled_sim && __running_cvc_exe) break;
+                          __prt_stats = TRUE;
+                          if (__verbose) __cv_msg("  Design content tables will be written.\n");
+                          break;
+        case CO_PRTALLSTATS:
+                          /* AIV 03/30/12 - this should only turn on for compile time */
+                          if (__compiled_sim && __running_cvc_exe) break;
+                          __prt_allstats = TRUE;
+                          if (__verbose)
+                              __cv_msg(
+                                       "  Voluminous design and module content tables will be written.\n");
+                          break;
+        case CO_SPIKEANAL:
+                          __gfwarn(591, olp->optfnam_ind, olp->optlin_cnt,
+                                   "+spikes option name changed - use standardized +show_canceled_e instead");
+                          break;
+        case CO_SHOWCANCELE:
+                          __show_cancel_e = TRUE;
+                          if (__verbose)
+                              __cv_msg("  Pulse canceled events X shown (glitches cause X output).\n");
+                          break;
+        case CO_NOSHOWCANCELE:
+                          __show_cancel_e = FALSE;
+                          if (__verbose)
+                              __cv_msg(
+                                       "  Pulse canceled events not shown (glitches removed - default).\n");
+                          break;
+        case CO_PULSEX_ONEVENTE:
+                          __showe_onevent = TRUE;
+                          if (__verbose)
+                              __cv_msg("  Pulse shown Xs scheduled at pulse leading edge (default).\n");
+                          break;
+        case CO_PULSEX_ONDETECT:
+                          __showe_onevent = FALSE;
+                          if (__verbose)
+                              __cv_msg("  Pulse shown Xs set when pulse (glitch) detected.\n");
+                          break;
+        case CO_WARNCANCELE:
+                          __warn_cancel_e = TRUE;
+                          if (__verbose)
+                              __cv_msg("  Warning message emitted when pulse (glitch) detected.\n");
+                          break;
+        case CO_NOWARNCANCELE: 
+                          __warn_cancel_e = FALSE;
+                          if (__verbose)
+                          {
+                              __cv_msg(
+                                       "  No warning message emitted when pulse (glitch) detected (detected).\n");
+                          }
+                          break;
+        case CO_MIPD_CYCLE_PND0_SCHD:
+                          __mipd_cycle_pnd0_schd = TRUE;
+                          if (__verbose)
+                          {
+                              __cv_msg(
+                                       "  Use cycle mode for MIPDS - delay input port change similar to #0.\n");
+                          }
+                          break;
+        case CO_RMGATEPND0S:
+                          __rm_gate_pnd0s = TRUE;  
+                          if (__verbose)
+                          {
+                              __cv_msg(
+                                       "  All gate #0 delays converted to no delay to speed up simulation.\n");
+                          }
+                          break;
+        case CO_NORMPTHPND0S:
+                          /* remove path pound 0 delays by default */
+                          __rm_path_pnd0s = FALSE;  
+                          if (__verbose)
+                          {
+                              __cv_msg("  Disabling removal of all 0 (no effect) path delays.\n");
+                          }
+                          break;
+        case CO_NOKEEPCOMMANDS:
+                          __history_on = FALSE;
+                          if (__verbose)
+                          {
+                              __cv_msg(
+                                       "  Entered (or $input or piped in) commands not kept on history list.\n");
+                          }
+                          /* SJM 04-02-09 - for interpreter/debugger only options, if have not */
+                          if (__compiled_sim || __no_iact)
+                          {
+                              __gfwarn(642, olp->optfnam_ind, olp->optlin_cnt,
+                                       "interpreter only option %s before +interp option  - will be ignored for compiled sim",
+                                       olp->opt);
+                          }
+                          break;
+        case CO_OLD_VPI_AFTER_ITER_FREE:
+                          __old_vpi_obj_after_iter_free_only = TRUE;
+                          if (__verbose)
+                          { 
+                              __cv_msg(
+                                       "To match old CVC vpi_, only allow freeing of objects in iterators after iterator freed.\n");
+                          }
+                          break;
+        case CO_PLIKEEPSRC:
+                          if (__verbose)
+                          { 
+                              __cv_msg(
+                                       "  +pli_keep_source option removed - all PLI source access kept");
+                          }
+                          break;
+        case CO_NOIACT:
 #ifndef __NOSIGS__
-     /* if no signal - then no interactive automatic but flag must be */
-     /* off since still need callbacks for invoking signal handler */
-     __no_iact = TRUE;
-     if (__verbose)
-      __cv_msg("  No interactive commands for this run - ^c causes finish.\n");
+                          /* if no signal - then no interactive automatic but flag must be */
+                          /* off since still need callbacks for invoking signal handler */
+                          __no_iact = TRUE;
+                          if (__verbose)
+                              __cv_msg("  No interactive commands for this run - ^c causes finish.\n");
 #endif
-     break;
-    case CO_SNAPSHOT:
+                          break;
+        case CO_SNAPSHOT:
 #ifndef __NOSIGS__
-     __intsig_prt_snapshot = TRUE;
-     if (__verbose)
-      __cv_msg(
-       "  Activity snap shot printed upon interrupt signal (^c) termination");
-     break;
+                          __intsig_prt_snapshot = TRUE;
+                          if (__verbose)
+                              __cv_msg(
+                                       "  Activity snap shot printed upon interrupt signal (^c) termination");
+                          break;
 #endif
-    case CO_NOSPFY:
-     __no_specify = TRUE;
-     if (__verbose)
-      __cv_msg("  Specify section(s) will be discarded before simulation.\n");
-     break;
-    case CO_NOTCHKS:
-     __no_tchks = TRUE;
-     if (__verbose)
-      __cv_msg("  Timing checks will be discarded before simulation.\n");
-     break;
-    case CO_LIBNOCELL:
-     __lib_are_cells = FALSE;
-     if (__verbose)
-      __cv_msg(
-       "  Library modules will not be cells unless in `celldefine region.\n");
-     break;
-    case CO_DMP_VARS:
-     __dmpvars_all = TRUE; 
-     /* if already using fsdb - continue to use fsdb */
-     if (__is_fst)
-      {
-       __gfwarn(679, olp->optfnam_ind, olp->optlin_cnt,
-        "+dumpvars used along with +fstvars - +using fstvars");
-      }
-     if (__verbose)
-      {
-       __cv_msg("  All variables will be dumped in VCD format.\n");
-      }
-     break;
-    /* AIV 11/21/07 - need to dump all variables via the command line */
-    /* this is used for running regression tests on dumpvars */
-    case CO_FST_DUMP2FST:
-     __fst_convert_dump2fst = TRUE;
-     if (__dv_fnam != NULL) __my_free(__dv_fnam, strlen(__dv_fnam));
-     __dv_fnam = __pv_stralloc(DFLFSTFNAM);
-     __is_fst = TRUE; 
-     if (__verbose)
-      {
-       __cv_msg("  Converting all $dump* calls to $fst format.\n");
-      }
-     break;
-    /* AIV 04/21/10 - fst dumping on the command line */
-    case CO_FST_PARALLEL:
-     if (__verbose)
-      {
-       __cv_msg("  FST Parallel mode turned on.\n");
-      }
-     __fst_parallel = TRUE;
-     break;
-    /* AIV 04/25/10 - fst dumping with buffering on the command line */
-    case CO_FST_PARALLEL2:
-     if (__verbose)
-      {
-       __cv_msg("  FST Parallel mode 2 turned on.\n");
-      }
-     __fst_parallel = TRUE;
-     __fst_parallel2 = TRUE;
-     break;
-    case CO_FST_VARS_REPACK:
-     if (__verbose)
-      {
-       __cv_msg("  FST Repacking turned on.\n");
-      }
-     __fst_repack = TRUE;
-    /*FALLTHRU */
-    case CO_FST_VARS:
-     /* if already using dumpvars continue to use - don't switch to fst */
-     if (__dmpvars_all)
-      {
-       __gfwarn(679, olp->optfnam_ind, olp->optlin_cnt,
-        "+fstvars used along with +dumpvars - using +dumpvars");
-       break;
-      }
-     if (__dv_fnam != NULL) __my_free(__dv_fnam, strlen(__dv_fnam));
-     __dv_fnam = __pv_stralloc(DFLFSTFNAM);
-     __is_fst = TRUE; 
-     __dmpvars_all = TRUE; 
-     if (__verbose)
-      {
-       __cv_msg("  All variables will be dumped in FST format.\n");
-      }
-     break;
-/* SJM 04-25-14 - for binary that can't gen .s files (piped only) */
-/* could if def this out with: "#ifdef __CVC_DEBUG" */
-    case CO_OPT_DEBUG:
-     /* turn on vm insn compiler debug output (mode) */
-     __opt_debug_flg = TRUE;
-     if (__verbose)
-      __cv_msg("  CVC debugging information will be printed.\n");
-     break;
+        case CO_NOSPFY:
+                          __no_specify = TRUE;
+                          if (__verbose)
+                              __cv_msg("  Specify section(s) will be discarded before simulation.\n");
+                          break;
+        case CO_NOTCHKS:
+                          __no_tchks = TRUE;
+                          if (__verbose)
+                              __cv_msg("  Timing checks will be discarded before simulation.\n");
+                          break;
+        case CO_LIBNOCELL:
+                          __lib_are_cells = FALSE;
+                          if (__verbose)
+                              __cv_msg(
+                                       "  Library modules will not be cells unless in `celldefine region.\n");
+                          break;
+        case CO_DMP_VARS:
+                          __dmpvars_all = TRUE; 
+                          /* if already using fsdb - continue to use fsdb */
+                          if (__is_fst)
+                          {
+                              __gfwarn(679, olp->optfnam_ind, olp->optlin_cnt,
+                                       "+dumpvars used along with +fstvars - +using fstvars");
+                          }
+                          if (__verbose)
+                          {
+                              __cv_msg("  All variables will be dumped in VCD format.\n");
+                          }
+                          break;
+                          /* AIV 11/21/07 - need to dump all variables via the command line */
+                          /* this is used for running regression tests on dumpvars */
+        case CO_FST_DUMP2FST:
+                          __fst_convert_dump2fst = TRUE;
+                          if (__dv_fnam != NULL) __my_free(__dv_fnam, strlen(__dv_fnam));
+                          __dv_fnam = __pv_stralloc(DFLFSTFNAM);
+                          __is_fst = TRUE; 
+                          if (__verbose)
+                          {
+                              __cv_msg("  Converting all $dump* calls to $fst format.\n");
+                          }
+                          break;
+                          /* AIV 04/21/10 - fst dumping on the command line */
+        case CO_FST_PARALLEL:
+                          if (__verbose)
+                          {
+                              __cv_msg("  FST Parallel mode turned on.\n");
+                          }
+                          __fst_parallel = TRUE;
+                          break;
+                          /* AIV 04/25/10 - fst dumping with buffering on the command line */
+        case CO_FST_PARALLEL2:
+                          if (__verbose)
+                          {
+                              __cv_msg("  FST Parallel mode 2 turned on.\n");
+                          }
+                          __fst_parallel = TRUE;
+                          __fst_parallel2 = TRUE;
+                          break;
+        case CO_FST_VARS_REPACK:
+                          if (__verbose)
+                          {
+                              __cv_msg("  FST Repacking turned on.\n");
+                          }
+                          __fst_repack = TRUE;
+                          /*FALLTHRU */
+        case CO_FST_VARS:
+                          /* if already using dumpvars continue to use - don't switch to fst */
+                          if (__dmpvars_all)
+                          {
+                              __gfwarn(679, olp->optfnam_ind, olp->optlin_cnt,
+                                       "+fstvars used along with +dumpvars - using +dumpvars");
+                              break;
+                          }
+                          if (__dv_fnam != NULL) __my_free(__dv_fnam, strlen(__dv_fnam));
+                          __dv_fnam = __pv_stralloc(DFLFSTFNAM);
+                          __is_fst = TRUE; 
+                          __dmpvars_all = TRUE; 
+                          if (__verbose)
+                          {
+                              __cv_msg("  All variables will be dumped in FST format.\n");
+                          }
+                          break;
+                          /* SJM 04-25-14 - for binary that can't gen .s files (piped only) */
+                          /* could if def this out with: "#ifdef __CVC_DEBUG" */
+        case CO_OPT_DEBUG:
+                          /* turn on vm insn compiler debug output (mode) */
+                          __opt_debug_flg = TRUE;
+                          if (__verbose)
+                              __cv_msg("  CVC debugging information will be printed.\n");
+                          break;
 
-    case CO_OPT_BLOCK_TRACE:
-     /* turn on vm insn compiler debug output (mode) */
-     __opt_block_trace = TRUE;
-     if (__verbose)
-      __cv_msg("  CVC block tracing will be printed.\n");
-     break;
-    case CO_OPT_VALTRK:
-     __opt_valtrk = TRUE;
-     if (__verbose)
-      __cv_msg("  CVC value tracking optimization will be used.\n");
-     break;
-    case CO_TRK_VERBOSE:
-     /* special case of verbose message for TRK optimizer */
-     __opt_trk_verbose = TRUE;
-     if (__verbose)
-      __cv_msg("  CVC value tracking verbose messages will be printed.\n");
-     break;
-    case CO_ASM_VAR_NAMES:
-     /* turn on vm insn compiler debug output (mode) */
-     __opt_emit_var_names = TRUE;
-     if (__verbose)
-      __cv_msg("  CVC ASM will use variable names if short enough.\n");
-     break;
-    case CO_CVC_STATS: 
-     __opt_prt_stats = TRUE;
-     if (__verbose)
-      __cv_msg("  CVC compilation statistics will be printed.\n");
-     break;
-    case CO_OPT_LEVEL_2:
-     __compiled_sim = TRUE;
-     __optimize_level = 2;
-     __no_iact = TRUE;
-     if (__verbose) __cv_msg("  Optimization level 2 selected.\n");
-     break;
-    case CO_DMP_FLOWG:
-     __dump_flowg = TRUE; 
-     if (__verbose) __cv_msg("  Dumping the flow graph.\n");
-     break;
-    case CO_SHOW_ASM:
-     __show_asm = TRUE; 
-     if (__verbose)
-      {
-       __cv_msg("  Creating actual .s files instead of piping to as cmd.\n");
-      }
-     break;
-    case CO_ASM_EMIT_LOC:
-     sav_olp = olp;
-     olp = olp->optlnxt; 
-     if (olp != NULL) chp = olp->opt;
-     if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
-      {
+        case CO_OPT_BLOCK_TRACE:
+                          /* turn on vm insn compiler debug output (mode) */
+                          __opt_block_trace = TRUE;
+                          if (__verbose)
+                              __cv_msg("  CVC block tracing will be printed.\n");
+                          break;
+        case CO_OPT_VALTRK:
+                          __opt_valtrk = TRUE;
+                          if (__verbose)
+                              __cv_msg("  CVC value tracking optimization will be used.\n");
+                          break;
+        case CO_TRK_VERBOSE:
+                          /* special case of verbose message for TRK optimizer */
+                          __opt_trk_verbose = TRUE;
+                          if (__verbose)
+                              __cv_msg("  CVC value tracking verbose messages will be printed.\n");
+                          break;
+        case CO_ASM_VAR_NAMES:
+                          /* turn on vm insn compiler debug output (mode) */
+                          __opt_emit_var_names = TRUE;
+                          if (__verbose)
+                              __cv_msg("  CVC ASM will use variable names if short enough.\n");
+                          break;
+        case CO_CVC_STATS: 
+                          __opt_prt_stats = TRUE;
+                          if (__verbose)
+                              __cv_msg("  CVC compilation statistics will be printed.\n");
+                          break;
+        case CO_OPT_LEVEL_2:
+                          __compiled_sim = TRUE;
+                          __optimize_level = 2;
+                          __no_iact = TRUE;
+                          if (__verbose) __cv_msg("  Optimization level 2 selected.\n");
+                          break;
+        case CO_DMP_FLOWG:
+                          __dump_flowg = TRUE; 
+                          if (__verbose) __cv_msg("  Dumping the flow graph.\n");
+                          break;
+        case CO_SHOW_ASM:
+                          __show_asm = TRUE; 
+                          if (__verbose)
+                          {
+                              __cv_msg("  Creating actual .s files instead of piping to as cmd.\n");
+                          }
+                          break;
+        case CO_ASM_EMIT_LOC:
+                          sav_olp = olp;
+                          olp = olp->optlnxt; 
+                          if (olp != NULL) chp = olp->opt;
+                          if (olp == NULL || olp->is_emark || *chp == '+' || *chp == '-')
+                          {
 bad_asm_loc:
-       __gfwarn(999, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
-        "+asm_emit_loc [value] option illegal - ignored");
-       continue;
-      }
-     olp->optnum = -2;
-     if (sscanf(chp, "%d", &tmp) != 1 || tmp < 0 || tmp > 4)
-      goto bad_asm_loc;
+                              __gfwarn(999, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
+                                       "+asm_emit_loc [value] option illegal - ignored");
+                              continue;
+                          }
+                          olp->optnum = -2;
+                          if (sscanf(chp, "%d", &tmp) != 1 || tmp < 0 || tmp > 4)
+                              goto bad_asm_loc;
 
-     /* SJM 02/14/06 - 1 no longer possible - emit error */
-     if (tmp == 1) goto bad_asm_loc;
+                          /* SJM 02/14/06 - 1 no longer possible - emit error */
+                          if (tmp == 1) goto bad_asm_loc;
 
-     __asm_emit_loc = tmp;
-     break;
-    case CO_USE_INTERP_DPI_MK:
-     /* SJM 12-29-10 - need separate option for debugging interp dpi wrapper */
-     /* .so lib creation */
-     __use_interp_dpi_mk = TRUE; 
-     if (__verbose)
-      {
-       __cv_msg("  For debugging interpreter dpi will use a makefile.\n");
-      }
-     break;
-/* SJM 04-25-14 - if do not want to allow .s file gen at all */
-/* __CVC_DEBUG #endif would go here */
-    case CO_PWD_TMP:
-     __use_pwd_as_tmp = TRUE;  
-     if (strcmp(__usedir_cp, "") != 0)
-      {
-       __gfwarn(4310, olp->optfnam_ind, olp->optlin_cnt,
-        "previous +usedir=%s directory name for temp files option selected - +work overrides",
-        __usedir_cp);
-      }
-     if (__verbose)
-      __cv_msg("  CVC using pwd as work directory.\n");
-     break;
-    case CO_USEDIR:
-     /* AIV 07/16/12 - now allowing +usedir= to setting working directory */
-     /* to use instead of /tmp for temp work area */
-     /* +usedir=10 - set the new max value */
-     chp2 = strchr(olp->opt, '=');
-     /* DBG remove -- */
-     if (chp2 == NULL) __misc_terr(__FILE__, __LINE__);
-     /* ---- */
-     chp2++;
+                          __asm_emit_loc = tmp;
+                          break;
+        case CO_USE_INTERP_DPI_MK:
+                          /* SJM 12-29-10 - need separate option for debugging interp dpi wrapper */
+                          /* .so lib creation */
+                          __use_interp_dpi_mk = TRUE; 
+                          if (__verbose)
+                          {
+                              __cv_msg("  For debugging interpreter dpi will use a makefile.\n");
+                          }
+                          break;
+                          /* SJM 04-25-14 - if do not want to allow .s file gen at all */
+                          /* __CVC_DEBUG #endif would go here */
+        case CO_PWD_TMP:
+                          __use_pwd_as_tmp = TRUE;  
+                          if (strcmp(__usedir_cp, "") != 0)
+                          {
+                              __gfwarn(4310, olp->optfnam_ind, olp->optlin_cnt,
+                                       "previous +usedir=%s directory name for temp files option selected - +work overrides",
+                                       __usedir_cp);
+                          }
+                          if (__verbose)
+                              __cv_msg("  CVC using pwd as work directory.\n");
+                          break;
+        case CO_USEDIR:
+                          /* AIV 07/16/12 - now allowing +usedir= to setting working directory */
+                          /* to use instead of /tmp for temp work area */
+                          /* +usedir=10 - set the new max value */
+                          chp2 = strchr(olp->opt, '=');
+                          /* DBG remove -- */
+                          if (chp2 == NULL) __misc_terr(__FILE__, __LINE__);
+                          /* ---- */
+                          chp2++;
 
-     /* SJM 02-01-13 - now checking for both plus work and use dir */
-     if (__use_pwd_as_tmp)
-      {
-       __gfwarn(4304, olp->optfnam_ind, olp->optlin_cnt,
-        "both +usedir= work directory name for temp files and +work to use PWD directory options used - +work overrides");
-       break;
-      }
+                          /* SJM 02-01-13 - now checking for both plus work and use dir */
+                          if (__use_pwd_as_tmp)
+                          {
+                              __gfwarn(4304, olp->optfnam_ind, olp->optlin_cnt,
+                                       "both +usedir= work directory name for temp files and +work to use PWD directory options used - +work overrides");
+                              break;
+                          }
 
-     if (__verbose) __cv_msg("  CVC using %s as work directory.\n", chp2);
-     /* AIV 08/06/12 - should not emit error if tmp directory is removed */
-     /* for cvcsim executable */
-     if (stat(chp2, &st) != 0 && !__running_cvc_exe)
-      {
-       __gfwarn(4308, olp->optfnam_ind, olp->optlin_cnt,
-        "+usedir directory does not exist %s - using /tmp/", chp2);
-      }
-     else strcpy(__usedir_cp, chp2);
-     break;
-    case CO_REAL_WARNS:
-     __real_warns = TRUE;
-     if (__verbose) __cv_msg("  CVC emitting real NaN/Inf warnings.\n");
-     break;
-    case CO_COMPILED_OPT_SIM:
-     __compiled_sim = TRUE;
-     /* AIV 10/14/08 - -O now turns on inlining of code generation */
-     __inline_code = TRUE;   
-     /* AIV 01/12/09 - -O now turns on optimizing of register allocation */
-     __opt_reg_alloc = TRUE;
-     /* AIV LOOKATME - only supporting one level -O for now */
-     /* __optimize_level = 0; */
-     __no_iact = TRUE;
+                          if (__verbose) __cv_msg("  CVC using %s as work directory.\n", chp2);
+                          /* AIV 08/06/12 - should not emit error if tmp directory is removed */
+                          /* for cvcsim executable */
+                          if (stat(chp2, &st) != 0 && !__running_cvc_exe)
+                          {
+                              __gfwarn(4308, olp->optfnam_ind, olp->optlin_cnt,
+                                       "+usedir directory does not exist %s - using /tmp/", chp2);
+                          }
+                          else strcpy(__usedir_cp, chp2);
+                          break;
+        case CO_REAL_WARNS:
+                          __real_warns = TRUE;
+                          if (__verbose) __cv_msg("  CVC emitting real NaN/Inf warnings.\n");
+                          break;
+        case CO_COMPILED_OPT_SIM:
+                          __compiled_sim = TRUE;
+                          /* AIV 10/14/08 - -O now turns on inlining of code generation */
+                          __inline_code = TRUE;   
+                          /* AIV 01/12/09 - -O now turns on optimizing of register allocation */
+                          __opt_reg_alloc = TRUE;
+                          /* AIV LOOKATME - only supporting one level -O for now */
+                          /* __optimize_level = 0; */
+                          __no_iact = TRUE;
 #ifndef __CVC_RT__
-     if (__verbose) __cv_msg("  CVC optimized compiled simulation on.\n");
+                          if (__verbose) __cv_msg("  CVC optimized compiled simulation on.\n");
 #endif
-     break;
-    case CO_COMPILED_OPT_SIM_GATE:
-     __compiled_sim = TRUE;
-     __opt_reg_alloc = TRUE;
-     __no_iact = TRUE;
+                          break;
+        case CO_COMPILED_OPT_SIM_GATE:
+                          __compiled_sim = TRUE;
+                          __opt_reg_alloc = TRUE;
+                          __no_iact = TRUE;
 #ifndef __CVC_RT__
-     if (__verbose) __cv_msg("  CVC optimized gate simulation on.\n");
+                          if (__verbose) __cv_msg("  CVC optimized gate simulation on.\n");
 #endif
-     break;
-    case CO_TWO_STATE:
-     __opt_two_state = TRUE;
-     if (__verbose) __cv_msg("  CVC running in two state mode.\n");
-     break;
-    case CO_TWO_STATE_NO_WIRE:
-     __opt_two_state = TRUE;
-     __opt_two_state_no_wires = TRUE;
-     if (__verbose) 
-      {
-       __cv_msg("  CVC running in two state mode with 4-state wires.\n");
-      }
-     break;
-    case CO_NBAOPT:
-     __opt_nbaopt = TRUE;
-     if (__verbose) __cv_msg("  CVC ignoring non-blocking delays.\n");
-     break;
-    case CO_PIPE:
-     __my_popen = TRUE;
-     if (__verbose) __cv_msg("  CVC using faster piping during compilation.\n");
-     break;
+                          break;
+        case CO_TWO_STATE:
+                          __opt_two_state = TRUE;
+                          if (__verbose) __cv_msg("  CVC running in two state mode.\n");
+                          break;
+        case CO_TWO_STATE_NO_WIRE:
+                          __opt_two_state = TRUE;
+                          __opt_two_state_no_wires = TRUE;
+                          if (__verbose) 
+                          {
+                              __cv_msg("  CVC running in two state mode with 4-state wires.\n");
+                          }
+                          break;
+        case CO_NBAOPT:
+                          __opt_nbaopt = TRUE;
+                          if (__verbose) __cv_msg("  CVC ignoring non-blocking delays.\n");
+                          break;
+        case CO_PIPE:
+                          __my_popen = TRUE;
+                          if (__verbose) __cv_msg("  CVC using faster piping during compilation.\n");
+                          break;
 #ifdef __XPROP__
-    /* turn on xprop */
-    case CO_XPROP:
-     /* cannot use xprop and xprop2 */
-     if (__xprop2)
-      {
-       __gferr(1990, olp->optfnam_ind, olp->optlin_cnt,
-        "+xprop cannot be used with +xprop2 - only one may be used");
-      }
-     __xprop = TRUE;
-     if (__verbose) 
-      {
-       __cv_msg("  CVC running in X propagation mode.\n");
-      }
-     break;
-    /* turn on xprop - style 2 */
-    case CO_XPROP2:
-     /* cannot use xprop and xprop2 */
-     if (__xprop)
-      {
-       __gferr(1990, olp->optfnam_ind, olp->optlin_cnt,
-        "+xprop cannot be used with +xprop2 - only one may be used");
-      }
-     __xprop = TRUE;
-     __xprop2 = TRUE;
-     if (__verbose) 
-      {
-       __cv_msg("  CVC running in X propagation 2 mode.\n");
-      }
-     break;
-    /* turn on xprop tracing */
-    case CO_XPROP_TRACE:
-     __xprop_trace_on = TRUE;
-     if (__verbose) 
-      {
-       __cv_msg("  CVC running in X propagation tracing mode.\n");
-      }
-     //AIV XPROP - also need option to pass xprop file name - using default
-     if ((__xprop_trace_fp = __tilde_fopen(DFLT_XPROPFNAM, "w")) == NULL)
-      {
-        __gfwarn(641, olp->optfnam_ind, olp->optlin_cnt,
-         "cannot open xprop trace file %s", DFLT_XPROPFNAM);
-       return;
-      }
-     break;
-    case CO_XPROP_TRACE_SUPPRESS:
-     if (__verbose) 
-      {
-       __cv_msg("  CVC suppressing X propagation tracing at initialization.\n");
-      }
-     __xprop_xtrace_suppress = TRUE;
-     break;
-    /* set a max value of xprop stmt to trace */
-    case CO_XPROP_TRACE_MAX:
-     /* +xtracemax=10 - set the new max value */
-     chp2 = strchr(olp->opt, '=');
-     /* DBG remove -- */
-     if (chp2 == NULL) __misc_terr(__FILE__, __LINE__);
-     /* ---- */
-     chp2++;
-      __xprop_cond_max = atoi(chp2);   
+                          /* turn on xprop */
+        case CO_XPROP:
+                          /* cannot use xprop and xprop2 */
+                          if (__xprop2)
+                          {
+                              __gferr(1990, olp->optfnam_ind, olp->optlin_cnt,
+                                      "+xprop cannot be used with +xprop2 - only one may be used");
+                          }
+                          __xprop = TRUE;
+                          if (__verbose) 
+                          {
+                              __cv_msg("  CVC running in X propagation mode.\n");
+                          }
+                          break;
+                          /* turn on xprop - style 2 */
+        case CO_XPROP2:
+                          /* cannot use xprop and xprop2 */
+                          if (__xprop)
+                          {
+                              __gferr(1990, olp->optfnam_ind, olp->optlin_cnt,
+                                      "+xprop cannot be used with +xprop2 - only one may be used");
+                          }
+                          __xprop = TRUE;
+                          __xprop2 = TRUE;
+                          if (__verbose) 
+                          {
+                              __cv_msg("  CVC running in X propagation 2 mode.\n");
+                          }
+                          break;
+                          /* turn on xprop tracing */
+        case CO_XPROP_TRACE:
+                          __xprop_trace_on = TRUE;
+                          if (__verbose) 
+                          {
+                              __cv_msg("  CVC running in X propagation tracing mode.\n");
+                          }
+                          //AIV XPROP - also need option to pass xprop file name - using default
+                          if ((__xprop_trace_fp = __tilde_fopen(DFLT_XPROPFNAM, "w")) == NULL)
+                          {
+                              __gfwarn(641, olp->optfnam_ind, olp->optlin_cnt,
+                                       "cannot open xprop trace file %s", DFLT_XPROPFNAM);
+                              return;
+                          }
+                          break;
+        case CO_XPROP_TRACE_SUPPRESS:
+                          if (__verbose) 
+                          {
+                              __cv_msg("  CVC suppressing X propagation tracing at initialization.\n");
+                          }
+                          __xprop_xtrace_suppress = TRUE;
+                          break;
+                          /* set a max value of xprop stmt to trace */
+        case CO_XPROP_TRACE_MAX:
+                          /* +xtracemax=10 - set the new max value */
+                          chp2 = strchr(olp->opt, '=');
+                          /* DBG remove -- */
+                          if (chp2 == NULL) __misc_terr(__FILE__, __LINE__);
+                          /* ---- */
+                          chp2++;
+                          __xprop_cond_max = atoi(chp2);   
 
-     /* if 0 set to large int */
-     if (__xprop_cond_max == 0) 
-       __xprop_cond_max = 0xfffffff0;
+                          /* if 0 set to large int */
+                          if (__xprop_cond_max == 0) 
+                              __xprop_cond_max = 0xfffffff0;
 
-     if (__verbose)
-      {
-       __cv_msg("  CVC X propagation tracing will max changed to %d.\n",
-        __xprop_cond_max);
-      }
-     break;
-    /* setup xprop with exprs evaled to preserve xs */
-    case CO_XPROP_AND_OR:
-     /* T => preserve xs for |,&, ||, &&  */
-     __xprop_and_or_xs = TRUE; 
-     if (__verbose)
-      {
-       __cv_msg("  CVC X propagation will include |, &, ||, && statements.\n");
-      }
-     break;
-    /* record xprop excluded stmts */
-    case CO_XPROP_EXCLUDED: 
-     __xprop_not_eligible = TRUE;
-     if (__verbose) 
-      {
-       __cv_msg("  CVC X propagation not eligible statement recording turned on.\n");
-      }
-     __setup_xprop_not_eligible_file(olp);
-     break;
-    case CO_XPROP_NO_EDGES:
-     /* turn off always @(x) edge X detection and X-propagation */
-     __no_xprop_edges = TRUE;
-     __do_xprop_xedge_vectors = FALSE;
-     if (__verbose)
-      {
-       __cv_msg("  CVC X propagation will not check for always @(x) edges.\n");
-      }
-     break;
-    case CO_XPROP_NO_VECTORED_EDGES:
-     __no_xprop_vectors = TRUE;
-     __do_xprop_xedge_vectors = FALSE;
-     if (__verbose)
-      {
-       __cv_msg("  CVC X propagation will only check for always @(x) scalar edges.\n");
-      }
-     break;
-    case CO_XPROP_ONLY_EDGES:
-     /* turn off always @(x) where edge X does not have posedge/negedge */
-     __xprop_pos_neg_only = TRUE;
-     __do_xprop_xedge_vectors = FALSE;
-     if (__verbose)
-      {
-       __cv_msg("  CVC X propagation will only check for always @(posedge/negedge) edges.\n");
-      }
-     break;
+                          if (__verbose)
+                          {
+                              __cv_msg("  CVC X propagation tracing will max changed to %d.\n",
+                                       __xprop_cond_max);
+                          }
+                          break;
+                          /* setup xprop with exprs evaled to preserve xs */
+        case CO_XPROP_AND_OR:
+                          /* T => preserve xs for |,&, ||, &&  */
+                          __xprop_and_or_xs = TRUE; 
+                          if (__verbose)
+                          {
+                              __cv_msg("  CVC X propagation will include |, &, ||, && statements.\n");
+                          }
+                          break;
+                          /* record xprop excluded stmts */
+        case CO_XPROP_EXCLUDED: 
+                          __xprop_not_eligible = TRUE;
+                          if (__verbose) 
+                          {
+                              __cv_msg("  CVC X propagation not eligible statement recording turned on.\n");
+                          }
+                          __setup_xprop_not_eligible_file(olp);
+                          break;
+        case CO_XPROP_NO_EDGES:
+                          /* turn off always @(x) edge X detection and X-propagation */
+                          __no_xprop_edges = TRUE;
+                          __do_xprop_xedge_vectors = FALSE;
+                          if (__verbose)
+                          {
+                              __cv_msg("  CVC X propagation will not check for always @(x) edges.\n");
+                          }
+                          break;
+        case CO_XPROP_NO_VECTORED_EDGES:
+                          __no_xprop_vectors = TRUE;
+                          __do_xprop_xedge_vectors = FALSE;
+                          if (__verbose)
+                          {
+                              __cv_msg("  CVC X propagation will only check for always @(x) scalar edges.\n");
+                          }
+                          break;
+        case CO_XPROP_ONLY_EDGES:
+                          /* turn off always @(x) where edge X does not have posedge/negedge */
+                          __xprop_pos_neg_only = TRUE;
+                          __do_xprop_xedge_vectors = FALSE;
+                          if (__verbose)
+                          {
+                              __cv_msg("  CVC X propagation will only check for always @(posedge/negedge) edges.\n");
+                          }
+                          break;
 #endif
-    case CO_UNROLL_LOOPS:
-     /* AIV 04/04/11 - turn on loop unrolling - now just for loops */
-     __opt_unroll_loops = TRUE;
-     if (__verbose) __cv_msg("  CVC loop unrolling on.\n");
-     break;
+        case CO_UNROLL_LOOPS:
+                          /* AIV 04/04/11 - turn on loop unrolling - now just for loops */
+                          __opt_unroll_loops = TRUE;
+                          if (__verbose) __cv_msg("  CVC loop unrolling on.\n");
+                          break;
 
 #ifndef __CVC32__
-    /* AIV 08/28/09 - use large 64-bit model - large gate level designs */ 
-    case CO_LARGE_MODEL:
-     __cvc_use_large_model = TRUE;
+                          /* AIV 08/28/09 - use large 64-bit model - large gate level designs */ 
+        case CO_LARGE_MODEL:
+                          __cvc_use_large_model = TRUE;
 #ifndef __CVC_RT__
-     if (__verbose) __cv_msg("  CVC compiling large model.\n");
+                          if (__verbose) __cv_msg("  CVC compiling large model.\n");
 #endif
-     break;
+                          break;
 #endif
-    case CO_EXECUTE:
-     /* compile and execute the compiled binary */
-     __execute_compiled = TRUE;
-     if (__verbose) __cv_msg("  CVC auto execute on.\n");
-     break;
-    case CO_INTERPRETER:
-     __compiled_sim = FALSE;
-     __optimize_level = 0;
-     __no_iact = FALSE;
-     if (__verbose)
-      {
-       __cv_msg("  Interpreted Simulation.\n");
-      }
-     break;
-    case CO_COMPILE:
-     sav_olp = olp;
-     olp = olp->optlnxt; 
-     if (olp != NULL) chp = olp->opt;
-     if (olp == NULL || olp->is_emark || chp == NULL || *chp == '+'
-     || *chp == '-')
-      {
-       /* AIV 05/13/09 - noticed this was missing string but passed %s */
-       __gferr(999, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
-        "%s output executable not followed by file name -o", chp);
-       continue;
-      }
-     olp->optnum = -2;
-     __exe_name = __pv_stralloc(chp); 
-     if (__verbose)
-      {
-       __cv_msg( "  Compiled simulation executable saved to file %s\n",
-        __exe_name);
-      }
-     break;
-    /* same as +acc+1 - need two seperate CO_'s to avoid NC +access naming */
-    case CO_ACC_NO_NUM:
-     if (__verbose)
-      {
-       __cv_msg("  Design compiled for VPI_ PLI access level 1.\n");
-      }
-     __pli_access_level = 1;
-     break;
-    case CO_ACC:
-     chp = &(olp->opt[5]);
-     /* go one pass for the +acc+ */
-     level = atoi(chp);   
-     if (level <= 0 || level > 4)
-      {
-       __gferr(999, olp->optfnam_ind, olp->optlin_cnt,
-       "+acc+ must be passed a level as an integer between 1 and 4");
-      level = 0;
-      }
-     if (__verbose)
-      {
-       __cv_msg("  Design compiled for VPI_ PLI access level %d.\n", level);
-      }
-     __pli_access_level = level;
-     break;
-    default: __case_terr(__FILE__, __LINE__);
-   }
-   olp = olp->optlnxt; 
-  }
- /* some option consistency checks */
- if (__intsig_prt_snapshot && !__no_iact)
-  {
-   __pv_warn(508,
-    "+snapshot option no effect because +nointeractive used or CVC +interp not used");
-  }
+        case CO_EXECUTE:
+                          /* compile and execute the compiled binary */
+                          __execute_compiled = TRUE;
+                          if (__verbose) __cv_msg("  CVC auto execute on.\n");
+                          break;
+        case CO_INTERPRETER:
+                          __compiled_sim = FALSE;
+                          __optimize_level = 0;
+                          __no_iact = FALSE;
+                          if (__verbose)
+                          {
+                              __cv_msg("  Interpreted Simulation.\n");
+                          }
+                          break;
+        case CO_COMPILE:
+                          sav_olp = olp;
+                          olp = olp->optlnxt; 
+                          if (olp != NULL) chp = olp->opt;
+                          if (olp == NULL || olp->is_emark || chp == NULL || *chp == '+'
+                              || *chp == '-')
+                          {
+                              /* AIV 05/13/09 - noticed this was missing string but passed %s */
+                              __gferr(999, sav_olp->optfnam_ind, sav_olp->optlin_cnt,
+                                      "%s output executable not followed by file name -o", chp);
+                              continue;
+                          }
+                          olp->optnum = -2;
+                          __exe_name = __pv_stralloc(chp); 
+                          if (__verbose)
+                          {
+                              __cv_msg( "  Compiled simulation executable saved to file %s\n",
+                                        __exe_name);
+                          }
+                          break;
+                          /* same as +acc+1 - need two seperate CO_'s to avoid NC +access naming */
+        case CO_ACC_NO_NUM:
+                          if (__verbose)
+                          {
+                              __cv_msg("  Design compiled for VPI_ PLI access level 1.\n");
+                          }
+                          __pli_access_level = 1;
+                          break;
+        case CO_ACC:
+                          chp = &(olp->opt[5]);
+                          /* go one pass for the +acc+ */
+                          level = atoi(chp);   
+                          if (level <= 0 || level > 4)
+                          {
+                              __gferr(999, olp->optfnam_ind, olp->optlin_cnt,
+                                      "+acc+ must be passed a level as an integer between 1 and 4");
+                              level = 0;
+                          }
+                          if (__verbose)
+                          {
+                              __cv_msg("  Design compiled for VPI_ PLI access level %d.\n", level);
+                          }
+                          __pli_access_level = level;
+                          break;
+        default: __case_terr(__FILE__, __LINE__);
+        }
+        olp = olp->optlnxt; 
+    }
+    /* some option consistency checks */
+    if (__intsig_prt_snapshot && !__no_iact)
+    {
+        __pv_warn(508,
+                  "+snapshot option no effect because +nointeractive used or CVC +interp not used");
+    }
 }
 
 /*
@@ -5803,26 +5803,26 @@ bad_asm_loc:
  */
 static void bld_inflist(void)
 {
- struct optlst_t *olp, *olp2; 
+    struct optlst_t *olp, *olp2; 
 
- /* must not free option files - need for mc scan args pli task ? */
- /* notice can copy because [args] and *none* same length */
- strcpy(__in_fils[0], "*none*");
- __last_optf = __last_inf;
+    /* must not free option files - need for mc scan args pli task ? */
+    /* notice can copy because [args] and *none* same length */
+    strcpy(__in_fils[0], "*none*");
+    __last_optf = __last_inf;
 
- for (olp = __opt_hdr; olp != NULL; olp = olp->optlnxt) 
-  {
-   /* -1 are unrecognized +/- options, -2 is file used as arg, > 0 is opt */
-   /* so 0 is verilog input file */ 
-   if (olp->optnum == CO_F)
+    for (olp = __opt_hdr; olp != NULL; olp = olp->optlnxt) 
     {
-     olp2 = olp->optlnxt;
-     if (olp2 != NULL) olp = olp2;
-     continue;
+        /* -1 are unrecognized +/- options, -2 is file used as arg, > 0 is opt */
+        /* so 0 is verilog input file */ 
+        if (olp->optnum == CO_F)
+        {
+            olp2 = olp->optlnxt;
+            if (olp2 != NULL) olp = olp2;
+            continue;
+        }
+        /* added markers automaticaly ignored */
+        if (olp->optnum == 0) __add_infil(olp->opt);
     }
-   /* added markers automaticaly ignored */
-   if (olp->optnum == 0) __add_infil(olp->opt);
-  }
 }
 
 /*
@@ -5834,8 +5834,8 @@ static void bld_inflist(void)
  */
 extern void __add_infil(char *fnam)
 {
- if (++__last_inf >= __siz_in_fils) __grow_infils(__last_inf);
- __in_fils[__last_inf] = __pv_stralloc(fnam);
+    if (++__last_inf >= __siz_in_fils) __grow_infils(__last_inf);
+    __in_fils[__last_inf] = __pv_stralloc(fnam);
 }
 
 /*
@@ -6478,15 +6478,15 @@ static struct primtab_t prims[] = {
 
 static void init_modsymtab(void)
 {
- __cur_fnam_ind = 0;
+    __cur_fnam_ind = 0;
 
- __cur_fnam = __in_fils[__cur_fnam_ind];
- __lin_cnt = 0;
- /* disguised trigger for expired copy expiration */
- __slotend_action = 0;
- /* this symbol table is not a symbol table of any symbol */
- __modsyms = __alloc_symtab(FALSE);
- __sym_addprims();
+    __cur_fnam = __in_fils[__cur_fnam_ind];
+    __lin_cnt = 0;
+    /* disguised trigger for expired copy expiration */
+    __slotend_action = 0;
+    /* this symbol table is not a symbol table of any symbol */
+    __modsyms = __alloc_symtab(FALSE);
+    __sym_addprims();
 }
 
 /*
@@ -6784,44 +6784,44 @@ struct sysfunc_t __vsysfuncs[] = {
  */
 static void init_stsymtab(void)
 {
- int32 i;
- struct systsk_t *stbp;
- struct sysfunc_t *sfbp;
+    int32 i;
+    struct systsk_t *stbp;
+    struct sysfunc_t *sfbp;
 
- /* system symbols handled specially - only tasks and funcs */
- /* this sets symbol table to emtpy also */
- /* not a symbol table of any symbol */
- __syssyms = __alloc_symtab(FALSE);
- __cur_fnam_ind = 0;
- __cur_fnam = __in_fils[__cur_fnam_ind];
- __lin_cnt = 0;
+    /* system symbols handled specially - only tasks and funcs */
+    /* this sets symbol table to emtpy also */
+    /* not a symbol table of any symbol */
+    __syssyms = __alloc_symtab(FALSE);
+    __cur_fnam_ind = 0;
+    __cur_fnam = __in_fils[__cur_fnam_ind];
+    __lin_cnt = 0;
 
- /* add system tasks */
- /* then normal system tasks - var. (or unknown) args */
- for (i = 0;; i++)
-  {
-   stbp = &(vsystasks[i]);
-   if (strcmp(stbp->stsknam, "") == 0) break;
-   add_systsksym(stbp);
-  }
- /* add system functions */
- for (i = 0;; i++)
-  {
-   sfbp = &(__vsysfuncs[i]);
-   if (strcmp(sfbp->syfnam, "") == 0) break;
-   add_sysfuncsym(sfbp);
-  }
+    /* add system tasks */
+    /* then normal system tasks - var. (or unknown) args */
+    for (i = 0;; i++)
+    {
+        stbp = &(vsystasks[i]);
+        if (strcmp(stbp->stsknam, "") == 0) break;
+        add_systsksym(stbp);
+    }
+    /* add system functions */
+    for (i = 0;; i++)
+    {
+        sfbp = &(__vsysfuncs[i]);
+        if (strcmp(sfbp->syfnam, "") == 0) break;
+        add_sysfuncsym(sfbp);
+    }
 
- /* SJM 07/08/02 - setup both old veriusertfs systf and new +loadpli1 */
- __setup_veriusertf_systfs();
+    /* SJM 07/08/02 - setup both old veriusertfs systf and new +loadpli1 */
+    __setup_veriusertf_systfs();
 
 
- /* SJM 07/08/02 - handle all +loadvpi option dynamic lib loading */
- __process_pli_dynamic_libs(__vpi_dynlib_hd);
+    /* SJM 07/08/02 - handle all +loadvpi option dynamic lib loading */
+    __process_pli_dynamic_libs(__vpi_dynlib_hd);
 
- /* because variable number of vpi_ systf (dynamic registering), must add */
- /* tf_ first, vpi_ registered systfs one after last tf_ */
- __call_vlog_startup_procs();
+    /* because variable number of vpi_ systf (dynamic registering), must add */
+    /* tf_ first, vpi_ registered systfs one after last tf_ */
+    __call_vlog_startup_procs();
 }
 
 /*
@@ -6916,26 +6916,26 @@ static void chk_toggle_opt_consistent(void)
  */
 static void prep_vflist(void)
 {
- int32 fi;
+    int32 fi;
 
- /* no files since 0  and 1 are special */
- if (__last_inf == __last_optf)
-  __pv_terr(301, "no Verilog input files specified");
- __last_lbf = __last_inf;
+    /* no files since 0  and 1 are special */
+    if (__last_inf == __last_optf)
+        __pv_terr(301, "no Verilog input files specified");
+    __last_lbf = __last_inf;
 
- /* set open file/macro exp./include stack to empty */
- for (fi = 0; fi < MAXFILNEST; fi++) __vinstk[fi] = NULL;
- __vin_top = -1;
- __lasttoktyp = UNDEF;
- __last_attr_prefix = FALSE;
- /* this builds the empty top of stack entry */
- __push_vinfil();
- /* fill with 1st file and open it */
- /* __in_fils[0] is no file "none" */
- /* set to one after last option file */
- __cur_infi = __last_optf + 1;
- if (!__open_sfil())
-  __pv_terr(301, "no Verilog input - all files empty or cannot be opened");
+    /* set open file/macro exp./include stack to empty */
+    for (fi = 0; fi < MAXFILNEST; fi++) __vinstk[fi] = NULL;
+    __vin_top = -1;
+    __lasttoktyp = UNDEF;
+    __last_attr_prefix = FALSE;
+    /* this builds the empty top of stack entry */
+    __push_vinfil();
+    /* fill with 1st file and open it */
+    /* __in_fils[0] is no file "none" */
+    /* set to one after last option file */
+    __cur_infi = __last_optf + 1;
+    if (!__open_sfil())
+        __pv_terr(301, "no Verilog input - all files empty or cannot be opened");
 }
 
 
@@ -7113,39 +7113,39 @@ extern void __do_decompile(void)
  */
 extern void __rd_ver_src(void)
 {
- __total_rd_lines = 0;
- /* go through loop once for each module */
- /* everything in Verilog in modules */
- /* enter loop with first token in toktyp */
- for (;;)
-  {
-   /* EOF is eof of all in files - get tok. will open next input if need */
-   __get_vtok();
-   if (__toktyp == TEOF) break;
-   /* system tasks not allowed at top level - interacte mode handled */
-   /* elsewhere - but may be a compiler directive */
-   if (__toktyp >= CDIR_TOKEN_START && __toktyp <= CDIR_TOKEN_END)
-    __process_cdir();
-   /* if ever will have synced to one before file level thing */
-   else
+    __total_rd_lines = 0;
+    /* go through loop once for each module */
+    /* everything in Verilog in modules */
+    /* enter loop with first token in toktyp */
+    for (;;)
     {
-     /* SJM 03/20/00 - build top level attribute if present */
-     if (__attr_prefix)
-      {
-       __wrk_attr.attr_tok = MODULE;
-       __wrk_attr.attr_seen = TRUE;
-       __wrk_attr.attrnam = __pv_stralloc(__attrwrkstr);
-       __wrk_attr.attr_fnind = __attr_fnam_ind;
-       __wrk_attr.attrlin_cnt = __attr_lin_cnt;
-      }
-     else __wrk_attr.attr_seen = FALSE;
+        /* EOF is eof of all in files - get tok. will open next input if need */
+        __get_vtok();
+        if (__toktyp == TEOF) break;
+        /* system tasks not allowed at top level - interacte mode handled */
+        /* elsewhere - but may be a compiler directive */
+        if (__toktyp >= CDIR_TOKEN_START && __toktyp <= CDIR_TOKEN_END)
+            __process_cdir();
+        /* if ever will have synced to one before file level thing */
+        else
+        {
+            /* SJM 03/20/00 - build top level attribute if present */
+            if (__attr_prefix)
+            {
+                __wrk_attr.attr_tok = MODULE;
+                __wrk_attr.attr_seen = TRUE;
+                __wrk_attr.attrnam = __pv_stralloc(__attrwrkstr);
+                __wrk_attr.attr_fnind = __attr_fnam_ind;
+                __wrk_attr.attrlin_cnt = __attr_lin_cnt;
+            }
+            else __wrk_attr.attr_seen = FALSE;
 
-     __rding_top_level = FALSE;
-     __rd_ver_mod();
-     __rding_top_level = TRUE;
+            __rding_top_level = FALSE;
+            __rd_ver_mod();
+            __rding_top_level = TRUE;
+        }
+        if (__toktyp == TEOF) break;
     }
-   if (__toktyp == TEOF) break;
-  }
 }
 
 /*

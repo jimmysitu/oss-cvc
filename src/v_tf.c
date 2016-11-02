@@ -960,7 +960,7 @@ extern void __call_misctfs_streset(void)
 
 extern void __call_misctfs_endreset(void)
 {
- call_allinsts_misctfs(REASON_ENDOFRESET);
+    call_allinsts_misctfs(REASON_ENDOFRESET);
 }
 
 extern void __call_misctfs_simstart(void)

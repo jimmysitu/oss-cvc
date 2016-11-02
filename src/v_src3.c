@@ -3887,48 +3887,48 @@ static int32 src_rd_chk_paramexpr(struct expr_t *ndp, int32 xwid)
  */
 extern void __rd_optcfg_files(void)
 {
- struct ocfil_lst_t *ocfnp;
+    struct ocfil_lst_t *ocfnp;
 
- /* SJM 12-11-10 - trick is to use file one up from last inf from options */
- /* that is called last lib fil and at end remove it - not in infils list */
- __last_lbf = __last_inf + 1;
+    /* SJM 12-11-10 - trick is to use file one up from last inf from options */
+    /* that is called last lib fil and at end remove it - not in infils list */
+    __last_lbf = __last_inf + 1;
 
- for (ocfnp = __optcfg_fils; ocfnp != NULL; ocfnp = ocfnp->oclnxt)
-  {
-   __in_fils[__last_lbf] = __pv_stralloc(ocfnp->ocfnam);
-   __cur_fnam = __in_fils[__last_lbf];
-
-   /* AIV PUTBACK print directory for now - for debugging */
-   if ((__in_s = __tilde_fopen(__cur_fnam, "r")) == NULL)
+    for (ocfnp = __optcfg_fils; ocfnp != NULL; ocfnp = ocfnp->oclnxt)
     {
-     __pv_err(4849,
-      "cannot open -optconfigfile %s - skipped", __cur_fnam);
-      continue;
-     }
-   if (feof(__in_s))
-    {
-     __pv_warn(4307, "-optconfigfile %s empty", __cur_fnam);
-     continue;
+        __in_fils[__last_lbf] = __pv_stralloc(ocfnp->ocfnam);
+        __cur_fnam = __in_fils[__last_lbf];
+
+        /* AIV PUTBACK print directory for now - for debugging */
+        if ((__in_s = __tilde_fopen(__cur_fnam, "r")) == NULL)
+        {
+            __pv_err(4849,
+                     "cannot open -optconfigfile %s - skipped", __cur_fnam);
+            continue;
+        }
+        if (feof(__in_s))
+        {
+            __pv_warn(4307, "-optconfigfile %s empty", __cur_fnam);
+            continue;
+        }
+        /* whenever open new file must discard pushed back */
+        __lasttoktyp = UNDEF;
+        __cur_fnam_ind = __last_lbf;
+        __cur_fnam = __in_fils[__cur_fnam_ind];
+        __lin_cnt = 1;
+        __file_just_op = TRUE;
+
+        /* read the stmts with toggle (for now) attr for one fil */ 
+        rd1_optcfg_fil(ocfnp);
+
+        if (__in_s != NULL) fclose(__in_s);
+        /* rest always get set in next loop - or visp record freed on exit */
+        __my_free(__in_fils[__last_lbf], strlen(__in_fils[__last_lbf] + 1));
+        __in_fils[__last_lbf] = NULL; 
     }
-   /* whenever open new file must discard pushed back */
-   __lasttoktyp = UNDEF;
-   __cur_fnam_ind = __last_lbf;
-   __cur_fnam = __in_fils[__cur_fnam_ind];
-   __lin_cnt = 1;
-   __file_just_op = TRUE;
-
-   /* read the stmts with toggle (for now) attr for one fil */ 
-   rd1_optcfg_fil(ocfnp);
-
-   if (__in_s != NULL) fclose(__in_s);
-   /* rest always get set in next loop - or visp record freed on exit */
-   __my_free(__in_fils[__last_lbf], strlen(__in_fils[__last_lbf] + 1));
-   __in_fils[__last_lbf] = NULL; 
-  }
- __last_lbf = -1;
- /* DBG remove --- */ 
- if (__debug_flg) dmp_dsgn_optcfgs();
- /* --- */
+    __last_lbf = -1;
+    /* DBG remove --- */ 
+    if (__debug_flg) dmp_dsgn_optcfgs();
+    /* --- */
 }
 
 /*
@@ -5985,50 +5985,50 @@ extern int32 __get_optcfg_prop_typ(struct ocfg_stmt_t *ocstmtp)
  */
 extern int32 __rd_cfg(void)
 {
- int32 i, sav_ecnt, sav_lin_cnt;
- FILE *fp;
- struct mapfiles_t *mapfp;
- char *sav_cur_fnam;
+    int32 i, sav_ecnt, sav_lin_cnt;
+    FILE *fp;
+    struct mapfiles_t *mapfp;
+    char *sav_cur_fnam;
 
- /* DBG remove -- */
- if (__map_files_hd == NULL) __misc_terr(__FILE__, __LINE__);
- /* --- */
+    /* DBG remove -- */
+    if (__map_files_hd == NULL) __misc_terr(__FILE__, __LINE__);
+    /* --- */
 
- /* initialize the instance clause rule binding XMR path component glb tab */
- __siz_bind_comps = 50;
- __bind_inam_comptab = (char **) __my_malloc(__siz_bind_comps*sizeof(char *)); 
- __last_bind_comp_ndx = -1;
- for (i = 0; i < __siz_bind_comps; i++) __bind_inam_comptab[i] = NULL;
+    /* initialize the instance clause rule binding XMR path component glb tab */
+    __siz_bind_comps = 50;
+    __bind_inam_comptab = (char **) __my_malloc(__siz_bind_comps*sizeof(char *)); 
+    __last_bind_comp_ndx = -1;
+    for (i = 0; i < __siz_bind_comps; i++) __bind_inam_comptab[i] = NULL;
 
- /* SJM 01/15/04 - reading cfg does not use in fils buts must save as cntxt */
- sav_lin_cnt = __lin_cnt;
- sav_cur_fnam = __cur_fnam;
+    /* SJM 01/15/04 - reading cfg does not use in fils buts must save as cntxt */
+    sav_lin_cnt = __lin_cnt;
+    sav_cur_fnam = __cur_fnam;
 
- sav_ecnt = __pv_err_cnt; 
- for (mapfp = __map_files_hd; mapfp != NULL; mapfp = mapfp->mapfnxt) 
-  {
-   /* must set cur file and line count for error messages */
-   __cur_fnam = __pv_stralloc(mapfp->mapfnam);
-   __lin_cnt = 1;
-   if ((fp = __tilde_fopen(__cur_fnam, "r")) == NULL)
+    sav_ecnt = __pv_err_cnt; 
+    for (mapfp = __map_files_hd; mapfp != NULL; mapfp = mapfp->mapfnxt) 
     {
-     __pv_err(3500, "cannot open config map library file %s - skipped",
-      __cur_fnam);
-     continue;
+        /* must set cur file and line count for error messages */
+        __cur_fnam = __pv_stralloc(mapfp->mapfnam);
+        __lin_cnt = 1;
+        if ((fp = __tilde_fopen(__cur_fnam, "r")) == NULL)
+        {
+            __pv_err(3500, "cannot open config map library file %s - skipped",
+                     __cur_fnam);
+            continue;
+        }
+        if (feof(fp))
+        {
+            __pv_warn(3121, "config map library file %s empty", __cur_fnam);
+            continue; 
+        }
+        rd1_cfg_file(fp);
     }
-   if (feof(fp))
-    {
-     __pv_warn(3121, "config map library file %s empty", __cur_fnam);
-     continue; 
-    }
-   rd1_cfg_file(fp);
-  }
- /* and then put back */
- __lin_cnt = sav_lin_cnt;
- __cur_fnam = sav_cur_fnam;
- 
- if (__pv_err_cnt != sav_ecnt) return(FALSE);
- return(TRUE);
+    /* and then put back */
+    __lin_cnt = sav_lin_cnt;
+    __cur_fnam = sav_cur_fnam;
+
+    if (__pv_err_cnt != sav_ecnt) return(FALSE);
+    return(TRUE);
 }
 
 /*
@@ -7154,62 +7154,62 @@ static int32 has_wildcard(char *cp)
  */
 extern void __expand_lib_wildcards(void)
 {
- int32 sav_lin_cnt;
- struct cfglib_t *lbp;
- struct libel_t *lbep;
- char *sav_cur_fnam, *cp;
- FILE *fp;
+    int32 sav_lin_cnt;
+    struct cfglib_t *lbp;
+    struct libel_t *lbep;
+    char *sav_cur_fnam, *cp;
+    FILE *fp;
 
- /* expand for library */
- for (lbp = __cfglib_hd; lbp != NULL; lbp = lbp->lbnxt)
-  {
-   sav_lin_cnt = __lin_cnt;
-   sav_cur_fnam = __cur_fnam;
-   __cur_fnam = lbp->cfglb_fnam;
-   __lin_cnt = lbp->cfglb_lno;
-
-   /* for each fspec in one library's fspec list, expand any wildcards */
-   for (lbep = lbp->lbels; lbep != NULL; lbep = lbep->lbenxt)
+    /* expand for library */
+    for (lbp = __cfglib_hd; lbp != NULL; lbp = lbp->lbnxt)
     {
-     /* AIV mark the expanded so the pattern string is replaced */
-     lbep->expanded = FALSE;
-     cp = lbep->lbefnam;
-     /* if it doesn't contain a wildcard char must be a file so simple open */
-     if (!has_wildcard(cp))
-      {
-       /* if it returns NULL file no such file */
-       if ((fp = __tilde_fopen(cp, "r")) == NULL)
+        sav_lin_cnt = __lin_cnt;
+        sav_cur_fnam = __cur_fnam;
+        __cur_fnam = lbp->cfglb_fnam;
+        __lin_cnt = lbp->cfglb_lno;
+
+        /* for each fspec in one library's fspec list, expand any wildcards */
+        for (lbep = lbp->lbels; lbep != NULL; lbep = lbep->lbenxt)
         {
-         __pv_ferr(3564, "config library %s unable to match pattern %s\n",
-          lbp->lbname, cp); 
+            /* AIV mark the expanded so the pattern string is replaced */
+            lbep->expanded = FALSE;
+            cp = lbep->lbefnam;
+            /* if it doesn't contain a wildcard char must be a file so simple open */
+            if (!has_wildcard(cp))
+            {
+                /* if it returns NULL file no such file */
+                if ((fp = __tilde_fopen(cp, "r")) == NULL)
+                {
+                    __pv_ferr(3564, "config library %s unable to match pattern %s\n",
+                              lbp->lbname, cp); 
+                }
+                else 
+                {
+                    /* no need to change the file name, just mark the flag as expanded */
+                    lbep->expanded = TRUE;
+                    /* close the open file */
+                    __my_fclose(fp); 
+                }
+            }
+            else if (strcmp(cp, "...") == 0)
+            {
+                /* include all files below the current directory */
+                if (!expand_single_hier(lbp, lbep, NULL))
+                {
+                    __pv_ferr(3564, "config library %s unable to match pattern %s\n",
+                              lbp->lbname, cp); 
+                }
+            }
+            else 
+            {
+                /* match the pattern case */
+                expand_dir_pats(lbp, lbep, cp);
+            }
         }
-       else 
-        {
-         /* no need to change the file name, just mark the flag as expanded */
-         lbep->expanded = TRUE;
-         /* close the open file */
-         __my_fclose(fp); 
-        }
-      }
-     else if (strcmp(cp, "...") == 0)
-      {
-       /* include all files below the current directory */
-       if (!expand_single_hier(lbp, lbep, NULL))
-        {
-         __pv_ferr(3564, "config library %s unable to match pattern %s\n",
-          lbp->lbname, cp); 
-        }
-      }
-     else 
-      {
-        /* match the pattern case */
-        expand_dir_pats(lbp, lbep, cp);
-      }
-   }
-   /* put back for further reading */
-   __lin_cnt = sav_lin_cnt;
-   __cur_fnam = sav_cur_fnam;
-  }
+        /* put back for further reading */
+        __lin_cnt = sav_lin_cnt;
+        __cur_fnam = sav_cur_fnam;
+    }
 }
 
 /*
@@ -7909,27 +7909,27 @@ static int32 expand_single_hier(struct cfglib_t *lbp, struct libel_t *lbep,
  */
 extern void __rd_ver_cfg_src(void)
 {
- struct cfg_t *cfgp;
- 
- /* SJM 05/18/04 - LOOKATME - why doesn't this test work? */
- /* ### if (__last_inf != __cmd_ifi) __misc_terr(__FILE__, __LINE__); */
+    struct cfg_t *cfgp;
 
- prep_cfg_vflist();
+    /* SJM 05/18/04 - LOOKATME - why doesn't this test work? */
+    /* ### if (__last_inf != __cmd_ifi) __misc_terr(__FILE__, __LINE__); */
 
- if (__cfg_verbose) dump_config_info();
+    prep_cfg_vflist();
 
- for (cfgp = __cfg_hd; cfgp != NULL; cfgp = cfgp->cfgnxt)
-  {
-   if (__cfg_verbose)
+    if (__cfg_verbose) dump_config_info();
+
+    for (cfgp = __cfg_hd; cfgp != NULL; cfgp = cfgp->cfgnxt)
     {
-     __cv_msg("BINDING RULES IN CONFIG %s \n",  cfgp->cfgnam);
+        if (__cfg_verbose)
+        {
+            __cv_msg("BINDING RULES IN CONFIG %s \n",  cfgp->cfgnam);
+        }
+        bind_cfg_design(cfgp, FALSE);
     }
-   bind_cfg_design(cfgp, FALSE);
-  }
 
- /* AIV 05/24/04 - free and link out of mod list all cfg lib modules */
- /* that are in scanned files but never instantiated */
- free_unused_cfgmods();
+    /* AIV 05/24/04 - free and link out of mod list all cfg lib modules */
+    /* that are in scanned files but never instantiated */
+    free_unused_cfgmods();
 }
 
 /*

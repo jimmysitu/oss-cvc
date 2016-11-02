@@ -524,104 +524,104 @@ extern const byte __hizstren_del_tab[];
  */
 extern void __pv_sim(void)
 {
- /* unless quiet mode, need blank line before sim writing */
- __cv_msg("\n");
- /* possible that no events scheduled at 0, must really move time to 0 */
- /* this assumes wrap works ? */
- __simtime = 0xffffffffffffffffULL;
+    /* unless quiet mode, need blank line before sim writing */
+    __cv_msg("\n");
+    /* possible that no events scheduled at 0, must really move time to 0 */
+    /* this assumes wrap works ? */
+    __simtime = 0xffffffffffffffffULL;
 
- /* move time to 0 */
- move_to_time0();
+    /* move time to 0 */
+    move_to_time0();
 
- /* now have timing wheel - can run vpi sim controls that are like */
- /* system task execs */
- __can_exec = TRUE;
+    /* now have timing wheel - can run vpi sim controls that are like */
+    /* system task execs */
+    __can_exec = TRUE;
 
- /* do not call vpiStartOfSim routine if resetting */
- if (__now_resetting)
-  {
-   __now_resetting = FALSE;
-   if (__tfrec_hdr != NULL) __call_misctfs_endreset();
-   if (__have_vpi_actions) __vpi_endreset_trycall();
-
-   /* if no events after reset - nothing to do so terminate */
-   if (__num_init_events == 0 && __p0_te_hdrp == NULL)
+    /* do not call vpiStartOfSim routine if resetting */
+    if (__now_resetting)
     {
-     __pv_warn(614,
-     "no pending statements or events after reset to time 0 - nothing to do");
-     return;
-    }
-  }
- else
-  {
-   /* no sim (variables) d.s. and time before here */
-   /* notice these routines cannot cause inside entry of debugger */
-   /* so can call from here - just scan and register */
-   if (__tfrec_hdr != NULL) __call_misctfs_simstart();
-   if (__have_vpi_actions) __vpi_startsim_trycall();
+        __now_resetting = FALSE;
+        if (__tfrec_hdr != NULL) __call_misctfs_endreset();
+        if (__have_vpi_actions) __vpi_endreset_trycall();
 
-   /* if no events after initializationand PLI start of sim - nothing to do */
-   if (__num_init_events == 0 && __p0_te_hdrp == NULL)
+        /* if no events after reset - nothing to do so terminate */
+        if (__num_init_events == 0 && __p0_te_hdrp == NULL)
+        {
+            __pv_warn(614,
+                      "no pending statements or events after reset to time 0 - nothing to do");
+            return;
+        }
+    }
+    else
     {
-     __pv_warn(614,
-      "no pending statements or events after initialization - nothing to do");
-     return;
+        /* no sim (variables) d.s. and time before here */
+        /* notice these routines cannot cause inside entry of debugger */
+        /* so can call from here - just scan and register */
+        if (__tfrec_hdr != NULL) __call_misctfs_simstart();
+        if (__have_vpi_actions) __vpi_startsim_trycall();
+
+        /* if no events after initializationand PLI start of sim - nothing to do */
+        if (__num_init_events == 0 && __p0_te_hdrp == NULL)
+        {
+            __pv_warn(614,
+                      "no pending statements or events after initialization - nothing to do");
+            return;
+        }
     }
-  }
 
- /* enter immediately if -s option, . here just starts sim */
- __cur_tevp = NULL;
+    /* enter immediately if -s option, . here just starts sim */
+    __cur_tevp = NULL;
 
- /* if this is at least 100 entering from debugger reset */
- if (__dbg_stop_before >= 100)
-  {
-   if (__dbg_stop_before != 101) { __dbg_stop_before = 0; goto no_stop; }
-   __dbg_stop_before = 0;
-   goto stop;
-  }
-
- /* else use -s option to decide if stop before sim */
- if (__stop_before_sim)
-  {
-   /* if no interactive ignore stop before sim with warning */
-   if (__no_iact)
+    /* if this is at least 100 entering from debugger reset */
+    if (__dbg_stop_before >= 100)
     {
-     __pv_warn(628,
-      "-s option ignored - +nointeractive disabled interactive mode");
-     goto no_stop;
+        if (__dbg_stop_before != 101) { __dbg_stop_before = 0; goto no_stop; }
+        __dbg_stop_before = 0;
+        goto stop;
     }
+
+    /* else use -s option to decide if stop before sim */
+    if (__stop_before_sim)
+    {
+        /* if no interactive ignore stop before sim with warning */
+        if (__no_iact)
+        {
+            __pv_warn(628,
+                      "-s option ignored - +nointeractive disabled interactive mode");
+            goto no_stop;
+        }
 stop:
-   /* interactive loop expects int32 (^c) signal to be ignored */
-   __do_interactive_loop();
-  }
+        /* interactive loop expects int32 (^c) signal to be ignored */
+        __do_interactive_loop();
+    }
 
 no_stop:
- /* set up during simulation control c signal handler - can set flag only */
+    /* set up during simulation control c signal handler - can set flag only */
 #ifndef __NOSIGS__
 #if defined(INTSIGS)
- signal(SIGINT, __sim_sigint_handler);
+    signal(SIGINT, __sim_sigint_handler);
 #else
- signal(SIGINT, (void (*)()) __sim_sigint_handler);
+    signal(SIGINT, (void (*)()) __sim_sigint_handler);
 #endif
 #endif
 
- /* AIV 12/21/07 - if compiling just compile and return for exit */
- if (__compiled_sim && !__running_cvc_exe) return;
+    /* AIV 12/21/07 - if compiling just compile and return for exit */
+    if (__compiled_sim && !__running_cvc_exe) return;
 
- /* SJM 09/30/04 - execute all new Verilog 2001 variable decl assigns */
- /* as the first step in simulation - do not need any events */
- /* SJM 09/30/04 - LOOKATME - could build and schedule separate init block */
- __exec_var_decl_init_assigns();
+    /* SJM 09/30/04 - execute all new Verilog 2001 variable decl assigns */
+    /* as the first step in simulation - do not need any events */
+    /* SJM 09/30/04 - LOOKATME - could build and schedule separate init block */
+    __exec_var_decl_init_assigns();
 
- /* repeat this loop for every time */
- __processing_pnd0s = FALSE;
-//AIV IDP FIXME - no longer use global __inum at runtime setting to -1 for dbg
- __inum = -1;
- /* do the actual simulation */
- /* AIV 04/10/07 - seperated out compiled sim to minimize if/else inside */
- /* of the simulation move time loop */
- if (__compiled_sim) do_compiled_sim();
- else do_sim();
+    /* repeat this loop for every time */
+    __processing_pnd0s = FALSE;
+    //AIV IDP FIXME - no longer use global __inum at runtime setting to -1 for dbg
+    __inum = -1;
+    /* do the actual simulation */
+    /* AIV 04/10/07 - seperated out compiled sim to minimize if/else inside */
+    /* of the simulation move time loop */
+    if (__compiled_sim) do_compiled_sim();
+    else do_sim();
 }
 
 /*
@@ -733,26 +733,26 @@ static void do_sim(void)
 static void do_compiled_sim(void)
 {
 #ifdef __CVC32__
- void (*enterp)(void);
+    void (*enterp)(void);
 #endif
- /* initialize free area list */
- __cur_te_endp->tenxtp = __free_event_tevp;
- __cur_tevp = __cur_te_hdrp;
- /* AIV 01/05/08 - first event must enter the wrapper which now sets */
- /* the idp reg (esi) and then enters the first event */
- /* couldn't use the __asm__ here because of the restore (popl) of %esi */
- /* when compiling with -O2 */
+    /* initialize free area list */
+    __cur_te_endp->tenxtp = __free_event_tevp;
+    __cur_tevp = __cur_te_hdrp;
+    /* AIV 01/05/08 - first event must enter the wrapper which now sets */
+    /* the idp reg (esi) and then enters the first event */
+    /* couldn't use the __asm__ here because of the restore (popl) of %esi */
+    /* when compiling with -O2 */
 #ifdef __CVC32__
- /* AIV 10/21/09 - make extra space for asl wrappers args no need create */
- /* extra space in the lowered code */
- __asm__ ("subl   $32, %%esp" ::: "%esp");
- enterp = __first_enterp;
- (enterp)(); 
+    /* AIV 10/21/09 - make extra space for asl wrappers args no need create */
+    /* extra space in the lowered code */
+    __asm__ ("subl   $32, %%esp" ::: "%esp");
+    enterp = __first_enterp;
+    (enterp)(); 
 #else
- /* AIV 11/21/08 - just jump to enter for 64-bit need to keep align */
- /* on 16-byte call enter is -8 from rsp */
- __asm__ ("movq   __first_enterp, %%rax" ::: "%rax");
- __asm__ ("jmp    *%%rax" ::: "%rax");
+    /* AIV 11/21/08 - just jump to enter for 64-bit need to keep align */
+    /* on 16-byte call enter is -8 from rsp */
+    __asm__ ("movq   __first_enterp, %%rax" ::: "%rax");
+    __asm__ ("jmp    *%%rax" ::: "%rax");
 #endif
 }
 
@@ -6686,99 +6686,99 @@ static char *bld_tchk_srcdump(char *s, struct tchk_t *tcp, word64 *tim1,
  */
 extern void __init_sim(void)
 {
- char *sav_fnam;
- int i;
- struct thread_t *thp, *tail_thp, *head_thp;
+    char *sav_fnam;
+    int i;
+    struct thread_t *thp, *tail_thp, *head_thp;
 
- /* this is never called for resets, so initialize to no resets */
- __reset_count = 0;
- /* just set this to some value - task exec. always sets again */
- __reset_value = 0;
+    /* this is never called for resets, so initialize to no resets */
+    __reset_count = 0;
+    /* just set this to some value - task exec. always sets again */
+    __reset_value = 0;
 
- init_stime();
- sav_fnam = __in_fils[0];
- __in_fils[0] = __pv_stralloc("**initialize none**");
+    init_stime();
+    sav_fnam = __in_fils[0];
+    __in_fils[0] = __pv_stralloc("**initialize none**");
 
- /* do not emit new message at time 0 since initialize time */
- __last_trtime = 0ULL;
- __last_evtrtime = 0ULL;
+    /* do not emit new message at time 0 since initialize time */
+    __last_trtime = 0ULL;
+    __last_evtrtime = 0ULL;
 
- __suspended_thd = NULL;
- __suspended_idp = NULL;
- __cur_thd = NULL;
- /* AIV 05/03/10 - add 128 threads init to the free list */
- /* will just get/put on free lists during sim better than malloc/free */
- thp = __alloc_thrd();
- tail_thp = head_thp = thp;
- for (i = 0; i < 127; i++)
-  {
-   thp = __alloc_thrd();
-   tail_thp->thright = thp;
-   tail_thp = thp;
-  }
- __thd_freelst = head_thp;
+    __suspended_thd = NULL;
+    __suspended_idp = NULL;
+    __cur_thd = NULL;
+    /* AIV 05/03/10 - add 128 threads init to the free list */
+    /* will just get/put on free lists during sim better than malloc/free */
+    thp = __alloc_thrd();
+    tail_thp = head_thp = thp;
+    for (i = 0; i < 127; i++)
+    {
+        thp = __alloc_thrd();
+        tail_thp->thright = thp;
+        tail_thp = thp;
+    }
+    __thd_freelst = head_thp;
 
- /* current inst. stack needs nil on bottom for debugging and must be empty */
- /* DBG remove -- */
- if (__itspi != -1) __misc_terr(__FILE__, __LINE__);
- /* --- */
+    /* current inst. stack needs nil on bottom for debugging and must be empty */
+    /* DBG remove -- */
+    if (__itspi != -1) __misc_terr(__FILE__, __LINE__);
+    /* --- */
 
- /* must leave instance stack exactly as is - cannot initialize */
- init_wires();
- __pv_stlevel = 0;
+    /* must leave instance stack exactly as is - cannot initialize */
+    init_wires();
+    __pv_stlevel = 0;
 
- /* initialize dumpvars state */
- __dv_calltime = 0ULL;
- __dv_seen = FALSE;
- __dv_state = DVST_NOTSETUP;
- __dv_dumplimit_size = 0;
- __dv_chgnethdr = NULL;
- __dv_hdr = __dv_end = NULL;
+    /* initialize dumpvars state */
+    __dv_calltime = 0ULL;
+    __dv_seen = FALSE;
+    __dv_state = DVST_NOTSETUP;
+    __dv_dumplimit_size = 0;
+    __dv_chgnethdr = NULL;
+    __dv_hdr = __dv_end = NULL;
 
- /* initialize dumpports state */
- __dp_calltime = 0ULL;
- __dp_seen = FALSE;
+    /* initialize dumpports state */
+    __dp_calltime = 0ULL;
+    __dp_seen = FALSE;
 
- __in_fils[0] = sav_fnam;
- /* debugger source files go through last library file */
- __last_srcf = __last_lbf;
- /* putting any $input files on end since last_inf only needed for $input */
- /* from now on */
- /* resetting does not effect this */
- __last_inf = __last_lbf;
+    __in_fils[0] = sav_fnam;
+    /* debugger source files go through last library file */
+    __last_srcf = __last_lbf;
+    /* putting any $input files on end since last_inf only needed for $input */
+    /* from now on */
+    /* resetting does not effect this */
+    __last_inf = __last_lbf;
 
- /* last step is to setup interactive environment */
- /* needed since interactive setup stuff can be in source */
- __init_interactive();
- /* AIV 11/21/07 - need to dumpvars for all nets with +dumpvars flag */
- if (__dmpvars_all)
-  {
-   /* same as $dumpvars with no args */
-   struct mdvmast_t *mdvp;
-   mdvp = (struct mdvmast_t *) __my_malloc(sizeof(struct mdvmast_t));
-   mdvp->mdv_levels = 0;
-   mdvp->mdv_itprt_idp = NULL;
-   mdvp->mdv_tskp = NULL;
-   mdvp->mdv_np = NULL;
-   mdvp->mdvnxt = NULL;
-   __dv_hdr = __dv_end = mdvp;
-   __slotend_action |= SE_DUMPVARS;
-   __dv_isall_form = TRUE;
-   __dv_seen = TRUE;
-  }
- __run_state = SS_SIM;
+    /* last step is to setup interactive environment */
+    /* needed since interactive setup stuff can be in source */
+    __init_interactive();
+    /* AIV 11/21/07 - need to dumpvars for all nets with +dumpvars flag */
+    if (__dmpvars_all)
+    {
+        /* same as $dumpvars with no args */
+        struct mdvmast_t *mdvp;
+        mdvp = (struct mdvmast_t *) __my_malloc(sizeof(struct mdvmast_t));
+        mdvp->mdv_levels = 0;
+        mdvp->mdv_itprt_idp = NULL;
+        mdvp->mdv_tskp = NULL;
+        mdvp->mdv_np = NULL;
+        mdvp->mdvnxt = NULL;
+        __dv_hdr = __dv_end = mdvp;
+        __slotend_action |= SE_DUMPVARS;
+        __dv_isall_form = TRUE;
+        __dv_seen = TRUE;
+    }
+    __run_state = SS_SIM;
 
- /* AIV 12/15/10 - init coverage event/stmt marking arrays */
- if (__event_coverage)
-  {
-   __event_covered = (word32 *) __my_malloc(sizeof(word32)*__dc_id_ndx);
-   memset(__event_covered, 0, sizeof(word32)*__dc_id_ndx);
-  }
- if (__stmt_coverage)
-  {
-   __stmt_covered = (word32 *) __my_malloc(sizeof(word32)*__stmt_id_ndx);
-   memset(__stmt_covered, 0, sizeof(word32)*__stmt_id_ndx);
-  }
+    /* AIV 12/15/10 - init coverage event/stmt marking arrays */
+    if (__event_coverage)
+    {
+        __event_covered = (word32 *) __my_malloc(sizeof(word32)*__dc_id_ndx);
+        memset(__event_covered, 0, sizeof(word32)*__dc_id_ndx);
+    }
+    if (__stmt_coverage)
+    {
+        __stmt_covered = (word32 *) __my_malloc(sizeof(word32)*__stmt_id_ndx);
+        memset(__stmt_covered, 0, sizeof(word32)*__stmt_id_ndx);
+    }
 }
 
 /*
@@ -6963,38 +6963,38 @@ static void reinit_stime(void)
  */
 static void init_wires(void)
 {
- int32 ii;
+    int32 ii;
 
- __wire_init = TRUE;
- /* go through list of 1 inst. corresponding to each top level module */
- /* ignore all delays in propagating from lhs's to rhs's */
- __nchg_futend = __nchg_futhdr = NULL;
- /* AIV 04/09/08 - init the net change dummy header events */
- if (__compiled_sim)
-  {
-   __nchg_futhdr = __nchg_futend = &__nchg_dummy_hd;
-  }
- __initalw_thrd_hdr = NULL;
+    __wire_init = TRUE;
+    /* go through list of 1 inst. corresponding to each top level module */
+    /* ignore all delays in propagating from lhs's to rhs's */
+    __nchg_futend = __nchg_futhdr = NULL;
+    /* AIV 04/09/08 - init the net change dummy header events */
+    if (__compiled_sim)
+    {
+        __nchg_futhdr = __nchg_futend = &__nchg_dummy_hd;
+    }
+    __initalw_thrd_hdr = NULL;
 
- /* SJM - 05/24/00 - must not process var changes until 0 normal #0 pt. */
- /* if (__nchg_futhdr != NULL) process_all_netchgs(); */
+    /* SJM - 05/24/00 - must not process var changes until 0 normal #0 pt. */
+    /* if (__nchg_futhdr != NULL) process_all_netchgs(); */
 
- for (ii = 0; ii < __numtopm; ii++)
-  {
-   init_itinsts(__it_roots[ii]);
-   /* even though top modules can be linked by xmrs, do here can at worst */
-   /* cause a few extra events to be processed from xmrs */
-   /* SJM - 05/24/00 - must not process var changes until 0 normal #0 pt. */
-   /* if (__nchg_futhdr != NULL) process_all_netchgs(); */
-  }
+    for (ii = 0; ii < __numtopm; ii++)
+    {
+        init_itinsts(__it_roots[ii]);
+        /* even though top modules can be linked by xmrs, do here can at worst */
+        /* cause a few extra events to be processed from xmrs */
+        /* SJM - 05/24/00 - must not process var changes until 0 normal #0 pt. */
+        /* if (__nchg_futhdr != NULL) process_all_netchgs(); */
+    }
 
- /* SJM 04/11/01 - initializing tran channels after drivers propagated */
- /* hard drivers as possible have changed */
- __init_all_trchans();
+    /* SJM 04/11/01 - initializing tran channels after drivers propagated */
+    /* hard drivers as possible have changed */
+    __init_all_trchans();
 
- __wire_init = FALSE;
- if (__ev_tracing)
-  __tr_msg("\n>>>> wire initialization complete <<<<<\n");
+    __wire_init = FALSE;
+    if (__ev_tracing)
+        __tr_msg("\n>>>> wire initialization complete <<<<<\n");
 }
 
 /*
@@ -8937,13 +8937,13 @@ static void chk_1nschd_dce(struct net_t *np, struct mod_t *mdp)
 
 static int32 move_to_time0(void)
 {
- struct telhdr_t *twp;
+    struct telhdr_t *twp;
 
- __simtime++;
- twp = __cur_timehdr;
- __cur_te_hdrp = twp->te_hdrp;
- __cur_te_endp = twp->te_endp;
- return(TRUE);
+    __simtime++;
+    twp = __cur_timehdr;
+    __cur_te_hdrp = twp->te_hdrp;
+    __cur_te_endp = twp->te_endp;
+    return(TRUE);
 }
 
 /*

@@ -171,8 +171,8 @@ extern int __dig_main(int, char **);
  */
 int main(int argc, char **argv)
 {
- int rv1;
+    int rv1;
 
- rv1 = __dig_main(argc, argv);
- return(rv1);
+    rv1 = __dig_main(argc, argv);
+    return(rv1);
 }
