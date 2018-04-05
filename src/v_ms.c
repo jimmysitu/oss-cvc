@@ -7094,17 +7094,17 @@ extern void __sysfatal_msg(char *s, ...)
 /*VARARGS*/
 extern void __cv_msg(char *s, ...)
 {
- va_list va, va2;
+    va_list va, va2;
 
- if (__quiet_msgs) return;
+    if (__quiet_msgs) return;
 
- /* SJM 10/13/99 - ansii std says varargs not usable after vprintf called */
- va_start(va, s);
- va_start(va2, s);
- vfprintf(stdout, s, va);
- if (__log_s != NULL) vfprintf(__log_s, s, va2);
- va_end(va);
- va_end(va2);
+    /* SJM 10/13/99 - ansii std says varargs not usable after vprintf called */
+    va_start(va, s);
+    va_start(va2, s);
+    vfprintf(stdout, s, va);
+    if (__log_s != NULL) vfprintf(__log_s, s, va2);
+    va_end(va);
+    va_end(va2);
 }
 
 /*

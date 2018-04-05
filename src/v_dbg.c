@@ -525,85 +525,85 @@ extern void __my_exit(int32 rc, int32 do_exit)
  */
 extern void __init_interactive(void)
 { 
- int32 i;
- struct sy_t *syp;
+    int32 i;
+    struct sy_t *syp;
 
- /* set up listing file - nothing open and no line pos. file cached */
- __filpostab = NULL;
- __list_cur_fd = -1;
- /* use can change this with :set - number is one less than no. to list */
- /* since prt src lines is from - to */ 
- __list_cur_listnum = 9;
- /* start at 1st top level */
- /* force setting on first :l command */
- __list_cur_ifi = -1;
- __nxt_bpnum = 1; 
- __bphdr = NULL;
- __dispxhdr = NULL;
- __nxt_dispxnum = 1;
- __single_step = FALSE;
- __step_rep_cnt = 0;
- __step_from_thread = FALSE;
- __step_match_idp = NULL;
- __step_lini = -1;
- __step_ifi = -1;
- __verbose_step = FALSE;
- __last_iasytp = NULL;
+    /* set up listing file - nothing open and no line pos. file cached */
+    __filpostab = NULL;
+    __list_cur_fd = -1;
+    /* use can change this with :set - number is one less than no. to list */
+    /* since prt src lines is from - to */ 
+    __list_cur_listnum = 9;
+    /* start at 1st top level */
+    /* force setting on first :l command */
+    __list_cur_ifi = -1;
+    __nxt_bpnum = 1; 
+    __bphdr = NULL;
+    __dispxhdr = NULL;
+    __nxt_dispxnum = 1;
+    __single_step = FALSE;
+    __step_rep_cnt = 0;
+    __step_from_thread = FALSE;
+    __step_match_idp = NULL;
+    __step_lini = -1;
+    __step_ifi = -1;
+    __verbose_step = FALSE;
+    __last_iasytp = NULL;
 
- __last_stepidp = NULL;
- __last_steptskp = NULL;
- __last_stepifi = -1;
- __last_brktime = 0xffffffffffffffffULL;
+    __last_stepidp = NULL;
+    __last_steptskp = NULL;
+    __last_stepifi = -1;
+    __last_brktime = 0xffffffffffffffffULL;
 
- /* $scope start at first top level module - no old scope to push */
- __scope_idp = __it_roots[0]->it_idp;
- __scope_tskp = NULL;
+    /* $scope start at first top level module - no old scope to push */
+    __scope_idp = __it_roots[0]->it_idp;
+    __scope_tskp = NULL;
 
- /* allocate interactive module - re-initialized each time iact entered */
- /* 08/18/99 - for now only expr tab and glb tab fields used */
- __iact_mdp = (struct mod_t *) __my_malloc(sizeof(struct mod_t)); 
+    /* allocate interactive module - re-initialized each time iact entered */
+    /* 08/18/99 - for now only expr tab and glb tab fields used */
+    __iact_mdp = (struct mod_t *) __my_malloc(sizeof(struct mod_t)); 
 
- syp = (struct sy_t *) __my_malloc(sizeof(struct sy_t));
- syp->synam = __pv_stralloc("**IACT WORK**");
- syp->sydecl = TRUE;
+    syp = (struct sy_t *) __my_malloc(sizeof(struct sy_t));
+    syp->synam = __pv_stralloc("**IACT WORK**");
+    syp->sydecl = TRUE;
 
- __init_mod(__iact_mdp, syp);
- __iact_mdp->flatinum = 1;
- syp->el.emdp = __iact_mdp;
+    __init_mod(__iact_mdp, syp);
+    __iact_mdp->flatinum = 1;
+    syp->el.emdp = __iact_mdp;
 
- /* default is now, use scope of entry in interactive, :set to use old */ 
- __iact_scope_chg = TRUE; 
- __dbg_dflt_base = BHEX;
+    /* default is now, use scope of entry in interactive, :set to use old */ 
+    __iact_scope_chg = TRUE; 
+    __dbg_dflt_base = BHEX;
 
- /* notice line count and :list command line are unrelated - line count is */
- /* source line number or command history number */
- __lin_cnt = 1;
- /* this forces getc to read from read interactive line */
- __in_s = NULL;
- __file_just_op = FALSE;
- __first_linetok = FALSE; 
- __cmd_fnam = NULL;
- __cmd_s = NULL;
+    /* notice line count and :list command line are unrelated - line count is */
+    /* source line number or command history number */
+    __lin_cnt = 1;
+    /* this forces getc to read from read interactive line */
+    __in_s = NULL;
+    __file_just_op = FALSE;
+    __first_linetok = FALSE; 
+    __cmd_fnam = NULL;
+    __cmd_s = NULL;
 
- /* special code in get_env_sym so no environment here */
- __venviron[0] = NULL;
- 
- /* LOOKATME - should read .[cverdbinit?] with history off */
- __iahwrklen = 2*IDLEN + 8;
- __iahwrkline = __my_malloc(__iahwrklen);
- __hist_cur_listnum = 20;
- __echo_iactcmds_tolog = TRUE;
+    /* special code in get_env_sym so no environment here */
+    __venviron[0] = NULL;
 
- /* setup history */
- /* FIXME - need to wrap table not continue growing without limit */
- __iahsiz = IAHISTSIZ;
- __iahtab = (struct iahist_t *) __my_malloc(__iahsiz*sizeof(struct iahist_t));
- /* must start with 0 since first add moves to real 1 start */
- __iah_lasti = 0;
- /* indexed from 1 but initialize from 0 */
- for (i = 0; i < __iahsiz; i++)
-  { __iahtab[i].iah_lp = NULL; __iahtab[i].iah_hcp = NULL; }
- __hctrl_hd =__hctrl_end = NULL;
+    /* LOOKATME - should read .[cverdbinit?] with history off */
+    __iahwrklen = 2*IDLEN + 8;
+    __iahwrkline = __my_malloc(__iahwrklen);
+    __hist_cur_listnum = 20;
+    __echo_iactcmds_tolog = TRUE;
+
+    /* setup history */
+    /* FIXME - need to wrap table not continue growing without limit */
+    __iahsiz = IAHISTSIZ;
+    __iahtab = (struct iahist_t *) __my_malloc(__iahsiz*sizeof(struct iahist_t));
+    /* must start with 0 since first add moves to real 1 start */
+    __iah_lasti = 0;
+    /* indexed from 1 but initialize from 0 */
+    for (i = 0; i < __iahsiz; i++)
+    { __iahtab[i].iah_lp = NULL; __iahtab[i].iah_hcp = NULL; }
+    __hctrl_hd =__hctrl_end = NULL;
 }
 
 /*

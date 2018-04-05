@@ -5969,14 +5969,14 @@ static void reinit_1wirereg(struct net_t *np, struct mod_t *mdp)
  */
 extern void __initialize_dsgn_dces(void)
 {
- struct mod_t *mdp;
+    struct mod_t *mdp;
 
- for (mdp = __modhdr; mdp != NULL; mdp = mdp->mnxt)
-  {
-   __push_wrkitstk(mdp, 0);
-   __initialize_dces(__inst_mod);
-   __pop_wrkitstk();
-  }
+    for (mdp = __modhdr; mdp != NULL; mdp = mdp->mnxt)
+    {
+        __push_wrkitstk(mdp, 0);
+        __initialize_dces(__inst_mod);
+        __pop_wrkitstk();
+    }
 }
 
 /*

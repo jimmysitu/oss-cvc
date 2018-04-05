@@ -1058,13 +1058,13 @@ extern void __chkbld_vpi_systf_task(struct st_t *stp)
  */
 extern void __exec_all_compiletf_routines(void)
 {
- struct vpisystf_t *vstfp;
+    struct vpisystf_t *vstfp;
 
- for (vstfp = __vpi_sysf_hdr; vstfp != NULL; vstfp = vstfp->vpistfnxt)
-  exec_vpisysfunc_compiletf(vstfp);
+    for (vstfp = __vpi_sysf_hdr; vstfp != NULL; vstfp = vstfp->vpistfnxt)
+        exec_vpisysfunc_compiletf(vstfp);
 
- for (vstfp = __vpi_syst_hdr; vstfp != NULL; vstfp = vstfp->vpistfnxt)
-  exec_vpisystask_compiletf(vstfp);
+    for (vstfp = __vpi_syst_hdr; vstfp != NULL; vstfp = vstfp->vpistfnxt)
+        exec_vpisystask_compiletf(vstfp);
 }
 
 /*
@@ -2890,8 +2890,8 @@ extern void __vpi_startreset_trycall(void)
  */
 extern void __vpi_endreset_trycall(void)
 {
- if (__vpicb_tehdri[cbEndOfReset] != NULL)
-  exec_vpi_actioncbs(cbEndOfReset);
+    if (__vpicb_tehdri[cbEndOfReset] != NULL)
+        exec_vpi_actioncbs(cbEndOfReset);
 }
 
 /*
@@ -2899,8 +2899,8 @@ extern void __vpi_endreset_trycall(void)
  */
 extern void __vpi_endcomp_trycall(void)
 {
- if (__vpicb_tehdri[cbEndOfCompile] != NULL)
-  exec_vpi_actioncbs(cbEndOfCompile);
+    if (__vpicb_tehdri[cbEndOfCompile] != NULL)
+        exec_vpi_actioncbs(cbEndOfCompile);
 }
 
 /*
